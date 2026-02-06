@@ -41,6 +41,12 @@
       ],
       "@app/serializer/*": [
         "libs/shared/serializer/src/*"
+      ],
+      "@app/decorators": [
+        "libs/shared/decorators/src"
+      ],
+      "@app/decorators/*": [
+        "libs/shared/decorators/src/*"
       ]
     }
   }

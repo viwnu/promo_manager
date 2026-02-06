@@ -1,13 +1,13 @@
 import { Body, Controller, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiDoc } from '@app/decorators/api-doc';
-import { ApiDocExceptions } from '@app/decorators/api-doc/reponses';
-import { RequestProp } from '@app/decorators/param';
+import { RequestProp } from 'libs/shared/decorators/param';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard, JwtAuthGuard } from './guards';
 import { CreateUserIdentityModel, RefreshToken, UserIdentityDTO } from './dto/input';
 import { SetAccessToken, ClearAccessToken } from './interceptors';
+import { ApiDoc } from '@app/api-doc';
+import { ApiDocExceptions } from '@app/api-doc/responses';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -15,10 +15,13 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiDoc({
-    title: 'Login User and return refresh_token',
-    response: { status: 201, type: RefreshToken, description: 'refresh_token' },
-    exceptions: [ApiDocExceptions.unauthorized, ApiDocExceptions.badRequest],
-    requestBody: { type: CreateUserIdentityModel, description: 'login data' },
+    title: { summary: 'Login User and return refresh_token' },
+    body: { type: CreateUserIdentityModel, description: 'login data' },
+    responses: [
+      { status: 201, type: RefreshToken, description: 'refresh_token' },
+      ApiDocExceptions.unauthorized,
+      ApiDocExceptions.badRequest,
+    ],
   })
   @UseGuards(LocalAuthGuard)
   @UseInterceptors(SetAccessToken)
@@ -28,9 +31,8 @@ export class AuthController {
   }
 
   @ApiDoc({
-    title: 'Refresh and return refresh_token',
-    response: { status: 201, type: RefreshToken, description: 'refresh_token' },
-    exceptions: [ApiDocExceptions.unauthorized, ApiDocExceptions.badRequest],
+    title: { summary: 'Refresh and return refresh_token' },
+    responses: [ApiDocExceptions.unauthorized, ApiDocExceptions.badRequest],
   })
   @UseInterceptors(SetAccessToken)
   @Post('refresh')
@@ -39,9 +41,8 @@ export class AuthController {
   }
 
   @ApiDoc({
-    title: 'Logout User clear cookies delete refreshToken',
-    response: { status: 200, description: 'Empty response' },
-    exceptions: [ApiDocExceptions.unauthorized],
+    title: { summary: 'Logout User clear cookies delete refreshToken' },
+    responses: [{ status: 200, description: 'Empty response' }, ApiDocExceptions.unauthorized],
     auth: 'bearer',
   })
   @UseGuards(JwtAuthGuard)
@@ -52,9 +53,8 @@ export class AuthController {
   }
 
   // @ApiDoc({
-  //   title: 'Delete User',
-  //   response: { status: 200, description: 'Empty response' },
-  //   exceptions: [ApiDocExceptions.unauthorized],
+  //   title: {summary: 'Delete User'},
+  //   responses: [{ status: 200, description: 'Empty response' }, ApiDocExceptions.unauthorized],
   //   auth: 'bearer',
   // })
   // @UseGuards(JwtAuthGuard)
