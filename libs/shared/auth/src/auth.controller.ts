@@ -7,7 +7,7 @@ import { RequestProp } from '@app/decorators/param';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard, JwtAuthGuard } from './guards';
 import { CreateUserIdentityModel, RefreshToken, UserIdentityDTO } from './dto/input';
-import { SetAccesToken, ClearAccesToken } from './interceptors';
+import { SetAccessToken, ClearAccessToken } from './interceptors';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -21,7 +21,7 @@ export class AuthController {
     requestBody: { type: CreateUserIdentityModel, description: 'login data' },
   })
   @UseGuards(LocalAuthGuard)
-  @UseInterceptors(SetAccesToken)
+  @UseInterceptors(SetAccessToken)
   @Post('login')
   async login(@RequestProp('user') user: UserIdentityDTO) {
     return await this.authService.login(user);
@@ -32,7 +32,7 @@ export class AuthController {
     response: { status: 201, type: RefreshToken, description: 'refresh_token' },
     exceptions: [ApiDocExceptions.unauthorized, ApiDocExceptions.badRequest],
   })
-  @UseInterceptors(SetAccesToken)
+  @UseInterceptors(SetAccessToken)
   @Post('refresh')
   async refresh(@Body() refreshTokenInput: RefreshToken) {
     return await this.authService.refreshTokens(refreshTokenInput.refresh_token);
@@ -45,7 +45,7 @@ export class AuthController {
     auth: 'bearer',
   })
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(ClearAccesToken)
+  @UseInterceptors(ClearAccessToken)
   @Patch()
   async logout(@RequestProp('user') user: UserIdentityDTO): Promise<void> {
     await this.authService.logout(user);

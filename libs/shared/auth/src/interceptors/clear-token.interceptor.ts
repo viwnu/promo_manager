@@ -5,7 +5,7 @@ import { Response } from 'express';
 import { AUTH_TOKEN_NAME } from '../const';
 
 @Injectable()
-export class ClearAccesToken implements NestInterceptor {
+export class ClearAccessToken implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const httpContext = context.switchToHttp();
     const response = httpContext.getResponse<Response>();
