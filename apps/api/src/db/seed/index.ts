@@ -1,18 +1,14 @@
 import mongoose, { Model } from 'mongoose';
 import * as dotenv from 'dotenv';
 import { UserIdentity, UserIdentitySchema } from '@app/auth/db';
-import { User, UserSchema } from 'src/features/users/schema';
-import { Chat, ChatSchema } from 'src/features/chats/schema';
-import { Message, MessageSchema } from 'src/features/messages/schema';
+import { User, UserSchema } from '../../features/users/schema';
 
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
-  const userIdentityModel: Model<UserIdentity> = mongoose.model(UserIdentity.name, UserIdentitySchema);
-  const userModel: Model<User> = mongoose.model(User.name, UserSchema);
-  const chatModel: Model<Chat> = mongoose.model(Chat.name, ChatSchema);
-  const messageModel: Model<Message> = mongoose.model(Message.name, MessageSchema);
+  const userIdentityModel: Model<UserIdentity> = mongoose.model(UserIdentity.name, UserIdentitySchema) as Model<UserIdentity>;
+  const userModel: Model<User> = mongoose.model(User.name, UserSchema) as Model<User>;
 
   const createUser = async (name: string, email: string) => {
     const session = await mongoose.startSession();
@@ -41,34 +37,8 @@ async function seed() {
     { name: 'SeedUser#3', email: 'seed_3@email.com', password: 'my-strong-password' },
   ];
 
-  const createdUsers = await Promise.all(users.map(async ({ email, name }) => await createUser(name, email)));
+  await Promise.all(users.map(async ({ email, name }) => await createUser(name, email)));
 
-  const chats = [
-    { name: 'SeedChat#11', ownerId: createdUsers[0].id },
-    { name: 'SeedChat#12', ownerId: createdUsers[0].id, membersIds: [createdUsers[1].id] },
-    { name: 'SeedChat#13', ownerId: createdUsers[0].id, membersIds: [createdUsers[1].id, createdUsers[2].id] },
-    { name: 'SeedChat#21', ownerId: createdUsers[1].id, membersIds: [createdUsers[2].id] },
-  ];
-
-  const createdChats = await Promise.all(
-    chats.map(
-      async ({ name, ownerId, membersIds }) =>
-        await new chatModel({ name, owner: ownerId, members: [ownerId, ...(membersIds ? membersIds : [])] }).save(),
-    ),
-  );
-
-  const messages = [
-    { content: 'Message#11', chatId: createdChats[0].id, authorId: createdUsers[0].id },
-    { content: 'Message#12', chatId: createdChats[1].id, authorId: createdUsers[0].id },
-    { content: 'Message#22', chatId: createdChats[1].id, authorId: createdUsers[1].id },
-    { content: 'Message#33', chatId: createdChats[2].id, authorId: createdUsers[2].id },
-  ];
-
-  await Promise.all(
-    messages.map(
-      async ({ content, chatId, authorId }) => await new messageModel({ content, chat: chatId, author: authorId }).save(),
-    ),
-  );
   await mongoose.disconnect();
   return;
 }

@@ -11,7 +11,7 @@ import { UsersModule } from './features/users/users.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `.env.${process.env.NODE_ENV}`,
+      envFilePath: `.env.api.${process.env.NODE_ENV}`,
       isGlobal: true,
     }),
     MongooseModule.forRootAsync(MongooseConfigService()),

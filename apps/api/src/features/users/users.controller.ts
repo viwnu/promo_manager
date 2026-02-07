@@ -1,15 +1,15 @@
 import { Controller, Get, Body, Patch, UseGuards, Post, Delete } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '@app/auth/guards';
-import { SerializeView } from '@app/decorators/serializer';
-import { ApiDoc } from '@app/decorators/api-doc';
-import { ApiDocExceptions } from '@app/decorators/api-doc/reponses';
-import { RequestUser } from '../../shared/decorators';
 import { UsersService } from './users.service';
 import { UpdateUserDto, CreateUserDto } from './dto/input';
 import { UserViewAllDTO, UserSelfView, UserInternalView } from './dto/view';
 import { UserGuard } from './guards';
+import { ApiDoc } from '@app/api-doc';
+import { ApiDocExceptions } from '@app/api-doc/responses';
+import { SerializeView } from '@app/serializer';
+import { JwtAuthGuard } from '@app/auth/guards';
+import { RequestUser } from '../../decorators';
 
 @ApiTags('Users')
 @Controller('users')
@@ -17,9 +17,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @ApiDoc({
-    title: 'Create User',
-    response: { status: 201, description: 'Empty response' },
-    exceptions: [ApiDocExceptions.forbidden, ApiDocExceptions.badRequest],
+    title: { summary: 'Create User' },
+    responses: [{ status: 201, description: 'Empty response' }, ApiDocExceptions.forbidden, ApiDocExceptions.badRequest],
   })
   @Post('signup')
   async signup(@Body() createUserDto: CreateUserDto): Promise<void> {
@@ -27,8 +26,8 @@ export class UsersController {
   }
 
   @ApiDoc({
-    title: 'Show all users',
-    response: { status: 200, type: [UserViewAllDTO], description: 'All users' },
+    title: { summary: 'Show all users' },
+    responses: [{ status: 200, type: [UserViewAllDTO], description: 'All users' }],
   })
   @SerializeView(UserViewAllDTO)
   @Get()
@@ -37,9 +36,12 @@ export class UsersController {
   }
 
   @ApiDoc({
-    title: 'Show User info for self',
-    response: { status: 200, type: UserSelfView, description: 'User info for self' },
-    exceptions: [ApiDocExceptions.unauthorized, ApiDocExceptions.forbidden],
+    title: { summary: 'Show User info for self' },
+    responses: [
+      { status: 200, type: UserSelfView, description: 'User info for self' },
+      ApiDocExceptions.unauthorized,
+      ApiDocExceptions.forbidden,
+    ],
     auth: 'bearer',
   })
   @SerializeView(UserSelfView)
@@ -50,9 +52,13 @@ export class UsersController {
   }
 
   @ApiDoc({
-    title: 'Update User',
-    response: { status: 200, description: 'Empty response' },
-    exceptions: [ApiDocExceptions.unauthorized, ApiDocExceptions.forbidden, ApiDocExceptions.badRequest],
+    title: { summary: 'Update User' },
+    responses: [
+      { status: 200, description: 'Empty response' },
+      ApiDocExceptions.unauthorized,
+      ApiDocExceptions.forbidden,
+      ApiDocExceptions.badRequest,
+    ],
     auth: 'bearer',
   })
   @UseGuards(JwtAuthGuard, UserGuard)
@@ -62,9 +68,8 @@ export class UsersController {
   }
 
   @ApiDoc({
-    title: 'Delete User',
-    response: { status: 200, description: 'Empty response' },
-    exceptions: [ApiDocExceptions.unauthorized, ApiDocExceptions.forbidden],
+    title: { summary: 'Delete User' },
+    responses: [{ status: 200, description: 'Empty response' }, ApiDocExceptions.unauthorized, ApiDocExceptions.forbidden],
     auth: 'bearer',
   })
   @UseGuards(JwtAuthGuard, UserGuard)

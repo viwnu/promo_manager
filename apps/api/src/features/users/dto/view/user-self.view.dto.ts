@@ -3,9 +3,9 @@ import { IsEmail, IsMongoId, IsString } from 'class-validator';
 import { ClassSerializerContextOptions } from '@nestjs/common';
 import { Expose } from 'class-transformer';
 
-import { SerializedView } from '@app/decorators/serializer/interface';
 import { User } from '../../schema';
 import { UserIdentityDTO } from '@app/auth/dto/input';
+import { SerializedView } from '@app/serializer/interface';
 
 export class UserSelfView extends PickType(User, ['nickname']) implements SerializedView {
   @ApiProperty({ type: 'string', example: 'c47f3448-0a96-487f-b602-0a4529825fa2', description: 'The unique user id' })

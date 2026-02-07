@@ -3,12 +3,12 @@ import { IsDefined, IsEmail, IsString } from 'class-validator';
 import { User } from '../../schema';
 
 export class CreateUserDto extends PickType(User, ['nickname']) {
-  @ApiProperty({ type: 'string', example: 'Stiven', description: 'The name of user' })
+  @ApiProperty({ type: 'string', example: 'Steven', description: 'The name of user' })
   @IsDefined()
   @IsString()
   nickname!: string;
 
-  @ApiProperty({ type: 'string', example: 'example@email.com', description: 'The unique email adress' })
+  @ApiProperty({ type: 'string', example: 'example@email.com', description: 'The unique email address' })
   @IsDefined()
   @IsEmail()
   email!: string;

@@ -1,10 +1,10 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
 import { UserIdentityDTO } from '@app/auth/dto/input';
-import { RequestWithProp } from '@app/decorators/param';
-import { REQUEST_PROP_NAMES } from 'src/const';
 import { UsersService } from '../users.service';
 import { UserInternalView } from '../dto/view';
+import { RequestWithProp } from 'libs/shared/decorators/param';
+import { REQUEST_PROP_NAMES } from 'apps/api/src/const';
 
 @Injectable()
 export class UserGuard implements CanActivate {
@@ -14,9 +14,9 @@ export class UserGuard implements CanActivate {
     return await this.validateRequestUser(request);
   }
   async validateRequestUser(request: RequestWithProp<{ [REQUEST_PROP_NAMES.USER]: UserIdentityDTO }>): Promise<boolean> {
-    const findedUser = await this.userService.findOneByEmail(request.user.email);
-    if (!findedUser) throw new UnauthorizedException('User is not exists');
-    this.setRequestUser(request, findedUser);
+    const fundedUser = await this.userService.findOneByEmail(request.user.email);
+    if (!fundedUser) throw new UnauthorizedException('User is not exists');
+    this.setRequestUser(request, fundedUser);
     return true;
   }
 
