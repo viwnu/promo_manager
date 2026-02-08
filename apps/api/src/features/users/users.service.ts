@@ -26,7 +26,11 @@ export class UsersService {
   }
 
   async findAll(): Promise<UserViewAllDTO[]> {
-    return await this.userModel.find();
+    const users = await this.userModel.find().populate('userIdentity').lean();
+    return plainToInstance(UserViewAllDTO, users, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
   }
 
   async findOneByEmail(email: string): Promise<UserInternalView> {
@@ -46,7 +50,7 @@ export class UsersService {
   async delete(user: UserInternalView): Promise<void> {
     await this.transaction(async () => {
       await this.userModel.deleteOne({ _id: user.id });
-      await this.authService.remove({ email: user.userIdentity.email, id: user.userIdentity.id });
+      await this.authService.remove(user.userIdentity);
     });
   }
 

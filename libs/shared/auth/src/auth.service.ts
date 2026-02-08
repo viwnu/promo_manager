@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { CreateUserIdentityModel, JwtPayloadDTO, UserIdentityDTO } from './dto/input';
 import { TokensDTO } from './dto/view';
 import { UserIdentity, UserIdentityDocument } from './db';
+import { ROLE } from './const';
 
 @Injectable()
 export class AuthService {
@@ -19,12 +20,10 @@ export class AuthService {
 
   async validateUser({ email, password }: CreateUserIdentityModel): Promise<UserIdentityDTO | null> {
     const user = await this.findByEmail(email);
-    if (!user) return null;
+    if (!user || !user.active) return null;
     const passwordValid = await bcrypt.compare(password, user?.password);
-    if (passwordValid) {
-      return plainToInstance(UserIdentityDTO, user.toObject(), { excludeExtraneousValues: true });
-    }
-    return null;
+    if (!passwordValid) return null;
+    return plainToInstance(UserIdentityDTO, user.toObject(), { excludeExtraneousValues: true });
   }
 
   /**
@@ -35,23 +34,36 @@ export class AuthService {
     const existingUser = await this.findByEmail(createUserDto.email);
     if (existingUser) throw new ForbiddenException('User already exists');
     const hashPassword = await bcrypt.hash(createUserDto.password, 5);
-    const user = await new this.userIdentityModel({ ...createUserDto, password: hashPassword }).save();
+    const user = await new this.userIdentityModel({
+      ...createUserDto,
+      password: hashPassword,
+      active: true,
+      roles: [ROLE.USER],
+    }).save();
     return plainToInstance(UserIdentityDTO, user.toObject(), { excludeExtraneousValues: true });
   }
 
-  async login(userIdentity: UserIdentityDTO): Promise<TokensDTO> {
+  async login(userIdentity: Omit<UserIdentityDTO, 'active'>): Promise<TokensDTO> {
     const payload: JwtPayloadDTO = { email: userIdentity.email, sub: userIdentity.id };
     return await this.updateTokens(payload);
   }
 
-  async logout(userIdentity: UserIdentityDTO): Promise<void> {
+  async logout(userIdentity: Omit<UserIdentityDTO, 'active'>): Promise<void> {
     const user = await this.userIdentityModel.findById(userIdentity.id).exec();
     if (!user || !user.refreshToken) throw new UnauthorizedException('Unauthorized');
     user.refreshToken = null;
     await user.save();
   }
 
-  async remove(userIdentity: UserIdentityDTO): Promise<void> {
+  async banByEmail(email: string): Promise<void> {
+    const user = await this.userIdentityModel.findOne({ email }).exec();
+    if (!user) throw new NotFoundException();
+    if (!user.active) throw new BadRequestException('User already inactive');
+    if (user.roles.includes(ROLE.ADMIN)) throw new ForbiddenException('This user is admin');
+    await this.userIdentityModel.updateOne({ email: user.email }, { refreshToken: null, active: false }).exec();
+  }
+
+  async remove(userIdentity: Pick<UserIdentityDTO, 'id'>): Promise<void> {
     const user = await this.userIdentityModel.findById(userIdentity.id).exec();
     if (!user) throw new UnauthorizedException('User is not exists');
     await this.userIdentityModel.deleteOne({ _id: userIdentity.id });
@@ -60,10 +72,10 @@ export class AuthService {
   async refreshTokens(refresh_token: string): Promise<TokensDTO> {
     const payload: JwtPayloadDTO = this.verifyToken(refresh_token);
     const user = await this.userIdentityModel.findOne({ email: payload.email, _id: payload.sub });
-    if (!user) {
+    if (!user || !user.active) {
       throw new UnauthorizedException();
     }
-    const validRefreshToken = user ? await bcrypt.compare(refresh_token, user.refreshToken) : false;
+    const validRefreshToken = refresh_token && user.refreshToken && (await bcrypt.compare(refresh_token, user.refreshToken));
     if (!validRefreshToken) {
       throw new UnauthorizedException({
         message: 'Unauthorized - refreshToken is invalid',

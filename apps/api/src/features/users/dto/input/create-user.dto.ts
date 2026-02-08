@@ -2,11 +2,11 @@ import { ApiProperty, PickType } from '@nestjs/swagger';
 import { IsDefined, IsEmail, IsString } from 'class-validator';
 import { User } from '../../schema';
 
-export class CreateUserDto extends PickType(User, ['nickname']) {
+export class CreateUserDto extends PickType(User, ['name']) {
   @ApiProperty({ type: 'string', example: 'Steven', description: 'The name of user' })
   @IsDefined()
   @IsString()
-  nickname!: string;
+  name!: string;
 
   @ApiProperty({ type: 'string', example: 'example@email.com', description: 'The unique email address' })
   @IsDefined()

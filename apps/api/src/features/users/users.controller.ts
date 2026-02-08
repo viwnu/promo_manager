@@ -1,20 +1,27 @@
-import { Controller, Get, Body, Patch, UseGuards, Post, Delete } from '@nestjs/common';
+import { Controller, Get, Body, Patch, UseGuards, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
-import { UpdateUserDto, CreateUserDto } from './dto/input';
+import { UpdateUserDto, CreateUserDto, UserEmailDTO } from './dto/input';
 import { UserViewAllDTO, UserSelfView, UserInternalView } from './dto/view';
-import { UserGuard } from './guards';
+import { RolesGuard, UserGuard } from './guards';
 import { ApiDoc } from '@app/api-doc';
 import { ApiDocExceptions } from '@app/api-doc/responses';
 import { SerializeView } from '@app/serializer';
 import { JwtAuthGuard } from '@app/auth/guards';
 import { RequestUser } from '../../decorators';
+import { Roles } from '@app/auth/decorators';
+import { ROLE } from '@app/auth/const';
+import { AuthService } from '@app/auth/auth.service';
 
 @ApiTags('Users')
+// @Roles(ROLE.USER)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @ApiDoc({
     title: { summary: 'Create User' },
@@ -29,6 +36,8 @@ export class UsersController {
     title: { summary: 'Show all users' },
     responses: [{ status: 200, type: [UserViewAllDTO], description: 'All users' }],
   })
+  @Roles([ROLE.ADMIN])
+  @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
   @SerializeView(UserViewAllDTO)
   @Get()
   findAll(): Promise<UserViewAllDTO[]> {
@@ -45,7 +54,8 @@ export class UsersController {
     auth: 'bearer',
   })
   @SerializeView(UserSelfView)
-  @UseGuards(JwtAuthGuard, UserGuard)
+  @Roles([ROLE.USER])
+  @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
   @Get('me')
   async findOne(@RequestUser() user: UserInternalView): Promise<UserInternalView> {
     return user;
@@ -61,20 +71,40 @@ export class UsersController {
     ],
     auth: 'bearer',
   })
-  @UseGuards(JwtAuthGuard, UserGuard)
+  @Roles([ROLE.USER])
+  @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
   @Patch()
   async update(@RequestUser() user: UserInternalView, @Body() updateUserDto: UpdateUserDto): Promise<void> {
     await this.usersService.update(user, updateUserDto);
   }
 
   @ApiDoc({
-    title: { summary: 'Delete User' },
-    responses: [{ status: 200, description: 'Empty response' }, ApiDocExceptions.unauthorized, ApiDocExceptions.forbidden],
+    title: { summary: 'Ban User' },
+    responses: [
+      { status: 200, description: 'Empty response' },
+      ApiDocExceptions.unauthorized,
+      ApiDocExceptions.forbidden,
+      ApiDocExceptions.notFound,
+      ApiDocExceptions.badRequest,
+    ],
     auth: 'bearer',
   })
-  @UseGuards(JwtAuthGuard, UserGuard)
-  @Delete()
-  async delete(@RequestUser() user: UserInternalView): Promise<void> {
-    await this.usersService.delete(user);
+  @Roles([ROLE.ADMIN])
+  @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
+  @Patch('ban')
+  async ban(@Query() { email }: UserEmailDTO): Promise<void> {
+    return this.authService.banByEmail(email);
   }
+
+  //   @ApiDoc({
+  //     title: { summary: 'Delete User' },
+  //     responses: [{ status: 200, description: 'Empty response' }, ApiDocExceptions.unauthorized, ApiDocExceptions.forbidden],
+  //     auth: 'bearer',
+  //   })
+  //   @Roles([ROLE.USER])
+  //   @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
+  //   @Delete()
+  //   async delete(@RequestUser() user: UserInternalView): Promise<void> {
+  //     await this.usersService.delete(user);
+  //   }
 }

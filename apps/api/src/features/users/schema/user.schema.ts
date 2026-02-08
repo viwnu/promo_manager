@@ -8,10 +8,13 @@ export type UserDocument = HydratedDocument<User>;
 @Schema()
 export class User {
   @Prop()
-  nickname: string;
+  name: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: UserIdentity.name })
   userIdentity: UserIdentity;
+
+  @Prop()
+  phone: string;
 }
 
 export const UserSchema = MongooseSchemaFactory(User);

@@ -27,6 +27,5 @@ import { UsersModule } from './features/users/users.module';
     UsersModule,
   ],
   controllers: [ApiController],
-  providers: [],
 })
 export class ApiModule {}

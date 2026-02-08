@@ -26,7 +26,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @UseInterceptors(SetAccessToken)
   @Post('login')
-  async login(@RequestProp('user') user: UserIdentityDTO) {
+  async login(@RequestProp('user') user: Omit<UserIdentityDTO, 'active'>) {
     return await this.authService.login(user);
   }
 
@@ -48,7 +48,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(ClearAccessToken)
   @Patch()
-  async logout(@RequestProp('user') user: UserIdentityDTO): Promise<void> {
+  async logout(@RequestProp('user') user: Omit<UserIdentityDTO, 'active'>): Promise<void> {
     await this.authService.logout(user);
   }
 

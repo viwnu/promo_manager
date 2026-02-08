@@ -7,16 +7,16 @@ import { User } from '../../schema';
 import { UserIdentityDTO } from '@app/auth/dto/input';
 import { SerializedView } from '@app/serializer/interface';
 
-export class UserSelfView extends PickType(User, ['nickname']) implements SerializedView {
+export class UserSelfView extends PickType(User, ['name']) implements SerializedView {
   @ApiProperty({ type: 'string', example: 'c47f3448-0a96-487f-b602-0a4529825fa2', description: 'The unique user id' })
   @IsMongoId()
   @Expose()
   id: string;
 
-  @ApiProperty({ type: 'string', example: 'Destroer 8000', description: 'User nickname' })
+  @ApiProperty({ type: 'string', example: 'Destroer 8000', description: 'User name' })
   @IsString()
   @Expose()
-  nickname: string;
+  name: string;
 
   @ApiProperty({ type: 'string', example: 'example@email.com', description: 'User email' })
   @IsEmail()
@@ -24,7 +24,7 @@ export class UserSelfView extends PickType(User, ['nickname']) implements Serial
   get email(): string {
     return this.userIdentity.email;
   }
-  userIdentity: UserIdentityDTO;
+  userIdentity: Pick<UserIdentityDTO, 'email'>;
 
   static serializerOptions: ClassSerializerContextOptions = { strategy: 'excludeAll', type: UserSelfView };
 }

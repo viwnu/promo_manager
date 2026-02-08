@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 
 import { UserIdentityDTO } from '@app/auth/dto/input';
 import { UsersService } from '../users.service';
@@ -16,12 +16,13 @@ export class UserGuard implements CanActivate {
   async validateRequestUser(request: RequestWithProp<{ [REQUEST_PROP_NAMES.USER]: UserIdentityDTO }>): Promise<boolean> {
     const fundedUser = await this.userService.findOneByEmail(request.user.email);
     if (!fundedUser) throw new UnauthorizedException('User is not exists');
+    if (!fundedUser.userIdentity.active) throw new ForbiddenException('Действие запрещено');
     this.setRequestUser(request, fundedUser);
     return true;
   }
 
   setRequestUser(
-    request: RequestWithProp<{ [REQUEST_PROP_NAMES.USER]: Omit<UserIdentityDTO, 'email'> }>,
+    request: RequestWithProp<{ [REQUEST_PROP_NAMES.USER]: Pick<UserIdentityDTO, 'id'> }>,
     user: UserInternalView,
   ): void {
     request.user = user;

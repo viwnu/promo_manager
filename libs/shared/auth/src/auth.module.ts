@@ -12,7 +12,7 @@ import { UserIdentity, UserIdentitySchema } from './db';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `.env.${process.env.NODE_ENV}`,
+      envFilePath: `.env.api.${process.env.NODE_ENV}`,
     }),
     MongooseModule.forFeature([{ name: UserIdentity.name, schema: UserIdentitySchema }]),
     PassportModule,

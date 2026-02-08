@@ -2,8 +2,9 @@ import mongoose, { Model } from 'mongoose';
 import * as dotenv from 'dotenv';
 import { UserIdentity, UserIdentitySchema } from '@app/auth/db';
 import { User, UserSchema } from '../../features/users/schema';
+import { ROLE } from '@app/auth/const';
 
-dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+dotenv.config({ path: `.env.api.${process.env.NODE_ENV}` });
 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
@@ -19,8 +20,10 @@ async function seed() {
       const userIdentity = await new userIdentityModel({
         email,
         password: '$2a$05$FBFT.bSXO3.qHtMhfzXN7up0u08NhAl9mzHwB9rLv7w.i950IHII6',
+        active: true,
+        roles: [ROLE.USER],
       }).save();
-      const user = await new userModel({ nickname: name, userIdentity }).save();
+      const user = await new userModel({ name, userIdentity }).save();
       await session.commitTransaction();
       return user;
     } catch (error) {
