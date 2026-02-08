@@ -1,46 +1,87 @@
 import mongoose, { Model } from 'mongoose';
 import * as dotenv from 'dotenv';
-import { UserIdentity, UserIdentitySchema } from '@app/auth/db';
-import { User, UserSchema } from '../../features/users/schema';
+import { UserIdentity, UserIdentityDocument, UserIdentitySchema } from '@app/auth/db';
+import { User, UserDocument, UserSchema } from '../../features/users/schema';
+import { PromoCode, PromoCodeDocument, PromoCodeSchema } from '../../features/promo-codes/schema';
+import {
+  Order,
+  OrderDocument,
+  OrderSchema,
+  PromoCodeUsage,
+  PromoCodeUsageDocument,
+  PromoCodeUsageSchema,
+} from '../../features/orders/schema';
 import { ROLE } from '@app/auth/const';
+import { createUser } from './create-user';
+import { createPromoCode } from './create-promo-code';
+import { createOrder } from './create-order';
+import { createPromoCodeUsage } from './create-promo-code-usage';
 
 dotenv.config({ path: `.env.api.${process.env.NODE_ENV}` });
 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
-  const userIdentityModel: Model<UserIdentity> = mongoose.model(UserIdentity.name, UserIdentitySchema) as Model<UserIdentity>;
-  const userModel: Model<User> = mongoose.model(User.name, UserSchema) as Model<User>;
+  const userIdentityModel: Model<UserIdentityDocument> = mongoose.model(
+    UserIdentity.name,
+    UserIdentitySchema,
+  ) as Model<UserIdentityDocument>;
+  const userModel: Model<UserDocument> = mongoose.model(User.name, UserSchema) as Model<UserDocument>;
+  const promoCodeModel: Model<PromoCodeDocument> = mongoose.model(PromoCode.name, PromoCodeSchema) as Model<PromoCodeDocument>;
+  const orderModel: Model<OrderDocument> = mongoose.model(Order.name, OrderSchema) as Model<OrderDocument>;
+  const promoCodeUsageModel: Model<PromoCodeUsageDocument> = mongoose.model(
+    PromoCodeUsage.name,
+    PromoCodeUsageSchema,
+  ) as Model<PromoCodeUsageDocument>;
 
-  const createUser = async (name: string, email: string) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-      const existingUser = await userIdentityModel.findOne({ email }).exec();
-      if (existingUser) return await userModel.findOne({ userIdentity: existingUser }).populate('userIdentity').exec();
-      const userIdentity = await new userIdentityModel({
-        email,
-        password: '$2a$05$FBFT.bSXO3.qHtMhfzXN7up0u08NhAl9mzHwB9rLv7w.i950IHII6',
-        active: true,
-        roles: [ROLE.USER],
-      }).save();
-      const user = await new userModel({ name, userIdentity }).save();
-      await session.commitTransaction();
-      return user;
-    } catch (error) {
-      await session.abortTransaction();
-      throw new Error('Session was aborted');
-    } finally {
-      session.endSession();
+  const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const users = [];
+
+  for (let i = 0; i < 10; i++) {
+    users.push({ name: `SeedUser#${i}`, email: `seed_${i}@email.com`, password: 'my-strong-password' });
+  }
+
+  const admin = await createUser(userIdentityModel, userModel, 'Admin', 'admin@email.com', [ROLE.USER, ROLE.ADMIN]);
+  const createdUsers = await Promise.all(
+    users.map(async ({ email, name }) => await createUser(userIdentityModel, userModel, name, email)),
+  );
+  const allUsers = [admin, ...createdUsers].filter(Boolean);
+
+  const promoCodes: PromoCodeDocument[] = [];
+  const now = new Date();
+  const expiredDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  for (let i = 0; i < 10; i++) {
+    const code = `PROMO_${i + 1}`;
+    const promoCode = await createPromoCode(promoCodeModel, {
+      code,
+      discount: randomInt(5, 30),
+      limit: { overall: 1000, perUser: 5 },
+      validityPeriod: i === 1 ? { end: expiredDate } : undefined,
+      active: i !== 0,
+    });
+    promoCodes.push(promoCode);
+  }
+
+  const activePromoCodes = promoCodes.filter(
+    (promoCode) => promoCode.active && (!promoCode.validityPeriod?.end || promoCode.validityPeriod.end > now),
+  );
+
+  for (const user of allUsers) {
+    const ordersCount = randomInt(0, 10);
+    for (let i = 0; i < ordersCount; i++) {
+      const amount = randomInt(10, 500);
+      const order = await createOrder(orderModel, user._id, amount);
+
+      if (activePromoCodes.length > 0 && Math.random() < 0.75) {
+        const promoCode = activePromoCodes[randomInt(0, activePromoCodes.length - 1)];
+        const discountAmount = Math.round((amount * promoCode.discount) / 100);
+        await createPromoCodeUsage(promoCodeUsageModel, promoCode._id, user._id, order._id, discountAmount);
+        order.promoCode = promoCode.code;
+        await order.save();
+      }
     }
-  };
-
-  const users = [
-    { name: 'SeedUser#1', email: 'seed_1@email.com', password: 'my-strong-password' },
-    { name: 'SeedUser#2', email: 'seed_2@email.com', password: 'my-strong-password' },
-    { name: 'SeedUser#3', email: 'seed_3@email.com', password: 'my-strong-password' },
-  ];
-
-  await Promise.all(users.map(async ({ email, name }) => await createUser(name, email)));
+  }
 
   await mongoose.disconnect();
   return;
