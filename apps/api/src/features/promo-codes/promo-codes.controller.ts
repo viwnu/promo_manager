@@ -29,7 +29,7 @@ export class PromoCodesController {
   @Roles([ROLE.ADMIN])
   @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
   @Post()
-  create(@Body() dto: CreatePromoCodeDto): Promise<PromoCodeViewDto> {
+  create(@Body() dto: CreatePromoCodeDto) {
     return this.promoCodesService.create(dto);
   }
 
@@ -86,7 +86,7 @@ export class PromoCodesController {
   @Roles([ROLE.ADMIN])
   @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
   @Patch('disable/:id')
-  remove(@Param('id') id: string): Promise<PromoCodeViewDto> {
+  disable(@Param('id') id: string): Promise<PromoCodeViewDto> {
     return this.promoCodesService.disable(id);
   }
 }

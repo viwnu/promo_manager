@@ -1,8 +1,10 @@
+import { SerializedView } from '@app/serializer/interface';
+import { ClassSerializerContextOptions } from '@nestjs/common';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { IsDate, IsOptional } from 'class-validator';
 
-export class PromoCodeValidityPeriodDto {
+export class PromoCodeValidityPeriodDto implements SerializedView {
   @ApiPropertyOptional({
     type: 'string',
     format: 'date-time',
@@ -13,6 +15,7 @@ export class PromoCodeValidityPeriodDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
+  @Expose()
   start?: Date;
 
   @ApiPropertyOptional({
@@ -25,5 +28,11 @@ export class PromoCodeValidityPeriodDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
+  @Expose()
   end?: Date;
+
+  static serializerOptions: ClassSerializerContextOptions = {
+    strategy: 'excludeAll',
+    type: PromoCodeValidityPeriodDto,
+  };
 }
