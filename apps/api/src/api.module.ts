@@ -7,6 +7,7 @@ import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { LoggerModule } from '@app/logger';
 import { UsersModule } from './features/users/users.module';
+import { PromoCodesModule } from './features/promo-codes/promo-codes.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UsersModule } from './features/users/users.module';
       : []),
     LoggerModule,
     UsersModule,
+    PromoCodesModule,
   ],
   controllers: [ApiController],
 })
