@@ -16,6 +16,8 @@ export type PromoCodeValidityPeriodType = {
 
 @Schema()
 export class PromoCode {
+  id: string;
+
   @Prop({ unique: true, required: true })
   code: string; // - Уникальный код (например, "SUMMER2024")
 

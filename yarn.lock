@@ -336,7 +336,7 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@depyronick/clickhouse-client@2.1.0":
+"@depyronick/clickhouse-client@2.1.0", "@depyronick/clickhouse-client@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@depyronick/clickhouse-client/-/clickhouse-client-2.1.0.tgz#b34437907a91726fc9ac13e9f43cb1838adec190"
   integrity sha512-g6126a8gDlvTDxUpwwYR1xbCTbo8SbSfokGQryjO9TKp17NokidurQug6oOaJk3cblq70Y8z8wT6YKtWyovjOg==

@@ -17,7 +17,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./apps/api/test/jest-e2e.json",
-    "db:seed-dev": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register ./apps/api/src/db/seed/index.ts"
+    "db:seed-dev": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register ./apps/api/src/db/seed/index.ts",
+    "ch:init": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register ./apps/api/src/features/analytics/initialization/index.ts"
   },
   "dependencies": {
     "@depyronick/nestjs-clickhouse": "^2.1.0",
