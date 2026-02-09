@@ -9,6 +9,7 @@ import { LoggerModule } from '@app/logger';
 import { UsersModule } from './features/users/users.module';
 import { PromoCodesModule } from './features/promo-codes/promo-codes.module';
 import { OrdersModule } from './features/orders/orders.module';
+import { AnalyticsModule } from './features/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { OrdersModule } from './features/orders/orders.module';
     UsersModule,
     PromoCodesModule,
     OrdersModule,
+    AnalyticsModule,
   ],
   controllers: [ApiController],
 })

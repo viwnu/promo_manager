@@ -20,6 +20,7 @@
     "db:seed-dev": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register ./apps/api/src/db/seed/index.ts"
   },
   "dependencies": {
+    "@depyronick/nestjs-clickhouse": "^2.1.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^10.0.0",
