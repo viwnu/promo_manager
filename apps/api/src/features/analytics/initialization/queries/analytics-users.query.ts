@@ -1,6 +1,8 @@
 import { AnalyticsColumn, ClickHouseInitQuery } from './types';
 import { User } from '../../../users/schema';
 import { UserIdentity } from '@app/auth/db';
+export const MV_ANALYTICS_USERS_FROM_ORDERS_NAME = 'mv_analytics_users_from_orders';
+export const MV_ANALYTICS_USERS_FROM_PROMO_USAGE_NAME = 'mv_analytics_users_from_promo_usage';
 
 export const USER_FIELD_MAP = {
   id: { key: 'user_id', type: 'String' },
@@ -27,13 +29,15 @@ export const ANALYTICS_FIELDS = {
   discountAvg: { key: 'discount_avg', type: 'AggregateFunction(avg, Decimal(18, 2))' },
 } as const satisfies Record<string, AnalyticsColumn>;
 
+export const ANALYTICS_USERS_TABLE_NAME = 'analytics_users';
+
 export const ANALYTICS_USERS_QUERY: ClickHouseInitQuery = {
-  name: 'analytics_users',
+  name: ANALYTICS_USERS_TABLE_NAME,
   sql: `
-DROP VIEW IF EXISTS mv_analytics_users_from_orders;
-DROP VIEW IF EXISTS mv_analytics_users_from_promo_usage;
-DROP TABLE IF EXISTS analytics_users;
-CREATE TABLE IF NOT EXISTS analytics_users (
+DROP VIEW IF EXISTS ${MV_ANALYTICS_USERS_FROM_ORDERS_NAME};
+DROP VIEW IF EXISTS ${MV_ANALYTICS_USERS_FROM_PROMO_USAGE_NAME};
+DROP TABLE IF EXISTS ${ANALYTICS_USERS_TABLE_NAME};
+CREATE TABLE IF NOT EXISTS ${ANALYTICS_USERS_TABLE_NAME} (
   ${ANALYTICS_FIELDS.statsDate.key} ${ANALYTICS_FIELDS.statsDate.type},
   ${USER_FIELD_MAP.id.key} ${USER_FIELD_MAP.id.type},
   ${USER_IDENTITY_FIELD_MAP.email.key} ${USER_IDENTITY_FIELD_MAP.email.type},

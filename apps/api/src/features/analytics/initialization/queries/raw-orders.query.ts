@@ -10,11 +10,13 @@ const ORDER_FIELD_MAP = {
   createdAt: { key: 'created_at', type: 'DateTime' },
 } satisfies Record<keyof Pick<Order, 'id' | 'userId' | 'amount' | 'promoCode' | 'createdAt'>, AnalyticsColumn>;
 
+export const RAW_ORDERS_TABLE_NAME = 'raw_orders';
+
 export const RAW_ORDERS_TABLE: ClickHouseInitQuery = {
-  name: 'raw_orders',
+  name: RAW_ORDERS_TABLE_NAME,
   sql: `
-DROP TABLE IF EXISTS raw_orders;
-CREATE TABLE IF NOT EXISTS raw_orders (
+DROP TABLE IF EXISTS ${RAW_ORDERS_TABLE_NAME};
+CREATE TABLE IF NOT EXISTS ${RAW_ORDERS_TABLE_NAME} (
   ${ORDER_FIELD_MAP.id.key} ${ORDER_FIELD_MAP.id.type},
   ${ORDER_FIELD_MAP.userId.key} ${ORDER_FIELD_MAP.userId.type},
   ${USER_IDENTITY_FIELD_MAP.email.key} ${USER_IDENTITY_FIELD_MAP.email.type},

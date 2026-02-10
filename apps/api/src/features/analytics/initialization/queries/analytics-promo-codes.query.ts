@@ -20,12 +20,15 @@ export const ANALYTICS_PROMO_CODES_FIELDS = {
   discountAvg: { key: 'discount_avg', type: 'AggregateFunction(avg, Decimal(18, 2))' },
 } as const satisfies Record<string, AnalyticsColumn>;
 
+export const ANALYTICS_PROMO_CODES_TABLE_NAME = 'analytics_promo_codes';
+export const MV_ANALYTICS_PROMO_CODES_NAME = 'mv_analytics_promo_codes';
+
 export const ANALYTICS_PROMO_CODES_QUERY: ClickHouseInitQuery = {
-  name: 'analytics_promo_codes',
+  name: ANALYTICS_PROMO_CODES_TABLE_NAME,
   sql: `
-DROP VIEW IF EXISTS mv_analytics_promo_codes;
-DROP TABLE IF EXISTS analytics_promo_codes;
-CREATE TABLE IF NOT EXISTS analytics_promo_codes (
+DROP VIEW IF EXISTS ${MV_ANALYTICS_PROMO_CODES_NAME};
+DROP TABLE IF EXISTS ${ANALYTICS_PROMO_CODES_TABLE_NAME};
+CREATE TABLE IF NOT EXISTS ${ANALYTICS_PROMO_CODES_TABLE_NAME} (
   ${ANALYTICS_PROMO_CODES_FIELDS.statsDate.key} ${ANALYTICS_PROMO_CODES_FIELDS.statsDate.type},
   ${PROMO_CODE_FIELD_MAP.id.key} ${PROMO_CODE_FIELD_MAP.id.type},
   ${PROMO_CODE_FIELD_MAP.code.key} ${PROMO_CODE_FIELD_MAP.code.type},

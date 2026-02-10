@@ -1,13 +1,19 @@
 import { ClickHouseInitQuery } from '../types';
-import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from '../analytics-users.query';
-import { RAW_ORDERS_FIELD_MAP } from '../raw-orders.query';
+import {
+  ANALYTICS_FIELDS,
+  USER_FIELD_MAP,
+  USER_IDENTITY_FIELD_MAP,
+  ANALYTICS_USERS_TABLE_NAME,
+  MV_ANALYTICS_USERS_FROM_ORDERS_NAME,
+} from '../analytics-users.query';
+import { RAW_ORDERS_FIELD_MAP, RAW_ORDERS_TABLE_NAME } from '../raw-orders.query';
 
 export const ANALYTICS_USERS_MV_QUERY: ClickHouseInitQuery = {
-  name: 'mv_analytics_users_from_orders',
+  name: MV_ANALYTICS_USERS_FROM_ORDERS_NAME,
   sql: `
-DROP VIEW IF EXISTS mv_analytics_users_from_orders;
-CREATE MATERIALIZED VIEW IF NOT EXISTS mv_analytics_users_from_orders
-TO analytics_users
+DROP VIEW IF EXISTS ${MV_ANALYTICS_USERS_FROM_ORDERS_NAME};
+CREATE MATERIALIZED VIEW IF NOT EXISTS ${MV_ANALYTICS_USERS_FROM_ORDERS_NAME}
+TO ${ANALYTICS_USERS_TABLE_NAME}
 AS
 SELECT
   toDate(${RAW_ORDERS_FIELD_MAP.createdAt.key}) AS ${ANALYTICS_FIELDS.statsDate.key},
@@ -26,7 +32,7 @@ SELECT
   minStateIf(toDecimal64(0, 2), 0) AS ${ANALYTICS_FIELDS.discountMin.key},
   maxStateIf(toDecimal64(0, 2), 0) AS ${ANALYTICS_FIELDS.discountMax.key},
   avgStateIf(toDecimal64(0, 2), 0) AS ${ANALYTICS_FIELDS.discountAvg.key}
-FROM raw_orders
+FROM ${RAW_ORDERS_TABLE_NAME}
 GROUP BY ${ANALYTICS_FIELDS.statsDate.key}, ${USER_FIELD_MAP.id.key}, ${USER_IDENTITY_FIELD_MAP.email.key},
   ${USER_FIELD_MAP.name.key}, ${USER_FIELD_MAP.phone.key}
 `,

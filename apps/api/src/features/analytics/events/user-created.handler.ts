@@ -2,6 +2,7 @@ import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 
 import { UserCreatedEvent } from '../../../events';
 import { BackfillService } from '../backfill.service';
+import { RAW_USERS_TABLE_NAME } from '../initialization/queries/raw-users.query';
 
 @EventsHandler(UserCreatedEvent)
 export class UserCreatedHandler implements IEventHandler<UserCreatedEvent> {
@@ -29,7 +30,7 @@ export class UserCreatedHandler implements IEventHandler<UserCreatedEvent> {
         console.warn('[analytics] UserCreatedEvent produced no rows', { userId: payload.id });
         return;
       }
-    await this.backfillService.insertBatched('raw_users', rows);
+      await this.backfillService.insertBatched(RAW_USERS_TABLE_NAME, rows);
       console.log('[analytics] UserCreatedEvent processed', { userId: payload.id });
     } catch (error) {
       console.error('[analytics] UserCreatedEvent failed', error);

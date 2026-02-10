@@ -1,13 +1,18 @@
 import { ClickHouseInitQuery } from '../types';
-import { ANALYTICS_PROMO_CODES_FIELDS, PROMO_CODE_FIELD_MAP } from '../analytics-promo-codes.query';
-import { PROMO_CODE_USAGE_FIELD_MAP } from '../raw-promo-code-usage.query';
+import {
+  ANALYTICS_PROMO_CODES_FIELDS,
+  PROMO_CODE_FIELD_MAP,
+  ANALYTICS_PROMO_CODES_TABLE_NAME,
+  MV_ANALYTICS_PROMO_CODES_NAME,
+} from '../analytics-promo-codes.query';
+import { PROMO_CODE_USAGE_FIELD_MAP, RAW_PROMO_CODE_USAGE_TABLE_NAME } from '../raw-promo-code-usage.query';
 
 export const ANALYTICS_PROMO_CODES_MV_QUERY: ClickHouseInitQuery = {
-  name: 'mv_analytics_promo_codes',
+  name: MV_ANALYTICS_PROMO_CODES_NAME,
   sql: `
-DROP VIEW IF EXISTS mv_analytics_promo_codes;
-CREATE MATERIALIZED VIEW IF NOT EXISTS mv_analytics_promo_codes
-TO analytics_promo_codes
+DROP VIEW IF EXISTS ${MV_ANALYTICS_PROMO_CODES_NAME};
+CREATE MATERIALIZED VIEW IF NOT EXISTS ${MV_ANALYTICS_PROMO_CODES_NAME}
+TO ${ANALYTICS_PROMO_CODES_TABLE_NAME}
 AS
 SELECT
   toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.statsDate.key},
@@ -23,7 +28,7 @@ SELECT
   minState(${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountMin.key},
   maxState(${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountMax.key},
   avgState(${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountAvg.key}
-FROM raw_promo_code_usage
+FROM ${RAW_PROMO_CODE_USAGE_TABLE_NAME}
 GROUP BY ${ANALYTICS_PROMO_CODES_FIELDS.statsDate.key}, ${PROMO_CODE_FIELD_MAP.id.key}, ${PROMO_CODE_FIELD_MAP.code.key}
 `,
 };

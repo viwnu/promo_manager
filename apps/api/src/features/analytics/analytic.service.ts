@@ -32,6 +32,9 @@ import {
   formatDate as formatUsageDate,
   resolveDateRange as resolveUsageDateRange,
 } from './utils';
+import { ANALYTICS_USERS_TABLE_NAME } from './initialization/queries/analytics-users.query';
+import { ANALYTICS_PROMO_CODES_TABLE_NAME } from './initialization/queries/analytics-promo-codes.query';
+import { RAW_PROMO_CODE_USAGE_TABLE_NAME } from './initialization/queries/raw-promo-code-usage.query';
 import { AnalyticsUsersQueryDto } from './dto/analytics-users.query.dto';
 import { AnalyticsPromoCodesQueryDto } from './dto/analytics-promo-codes.query.dto';
 import { AnalyticsPromoCodeUsageQueryDto } from './dto/analytics-promo-code-usage.query.dto';
@@ -168,7 +171,7 @@ SELECT
   minMerge(${ANALYTICS_FIELDS.discountMin.key}) AS ${ANALYTICS_FIELDS.discountMin.key},
   maxMerge(${ANALYTICS_FIELDS.discountMax.key}) AS ${ANALYTICS_FIELDS.discountMax.key},
   avgMerge(${ANALYTICS_FIELDS.discountAvg.key}) AS ${ANALYTICS_FIELDS.discountAvg.key}
-FROM analytics_users
+FROM ${ANALYTICS_USERS_TABLE_NAME}
 ${whereClause}
 GROUP BY ${USER_FIELD_MAP.id.key}, ${USER_IDENTITY_FIELD_MAP.email.key}, ${USER_FIELD_MAP.name.key}, ${USER_FIELD_MAP.phone.key}
 `;
@@ -236,7 +239,7 @@ SELECT
   minMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountMin.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountMin.key},
   maxMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountMax.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountMax.key},
   avgMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountAvg.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountAvg.key}
-FROM analytics_promo_codes
+FROM ${ANALYTICS_PROMO_CODES_TABLE_NAME}
 ${whereClause}
 GROUP BY ${PROMO_CODE_FIELD_MAP.id.key}, ${PROMO_CODE_FIELD_MAP.code.key}
 `;
@@ -326,7 +329,7 @@ SELECT
   ${PROMO_CODE_USAGE_USER_FIELDS.phone.key} AS phone,
   ${PROMO_CODE_USAGE_FIELD_MAP.orderAmount.key} AS order_amount,
   ${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key} AS discount_amount
-FROM raw_promo_code_usage
+FROM ${RAW_PROMO_CODE_USAGE_TABLE_NAME}
 ${whereClause}
 `;
 

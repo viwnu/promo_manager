@@ -1,13 +1,19 @@
 import { ClickHouseInitQuery } from '../types';
-import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from '../analytics-users.query';
-import { PROMO_CODE_USAGE_FIELD_MAP, PROMO_CODE_USAGE_USER_FIELDS } from '../raw-promo-code-usage.query';
+import {
+  ANALYTICS_FIELDS,
+  USER_FIELD_MAP,
+  USER_IDENTITY_FIELD_MAP,
+  ANALYTICS_USERS_TABLE_NAME,
+  MV_ANALYTICS_USERS_FROM_PROMO_USAGE_NAME,
+} from '../analytics-users.query';
+import { PROMO_CODE_USAGE_FIELD_MAP, PROMO_CODE_USAGE_USER_FIELDS, RAW_PROMO_CODE_USAGE_TABLE_NAME } from '../raw-promo-code-usage.query';
 
 export const ANALYTICS_USERS_FROM_PROMO_USAGE_MV_QUERY: ClickHouseInitQuery = {
-  name: 'mv_analytics_users_from_promo_usage',
+  name: MV_ANALYTICS_USERS_FROM_PROMO_USAGE_NAME,
   sql: `
-DROP VIEW IF EXISTS mv_analytics_users_from_promo_usage;
-CREATE MATERIALIZED VIEW IF NOT EXISTS mv_analytics_users_from_promo_usage
-TO analytics_users
+DROP VIEW IF EXISTS ${MV_ANALYTICS_USERS_FROM_PROMO_USAGE_NAME};
+CREATE MATERIALIZED VIEW IF NOT EXISTS ${MV_ANALYTICS_USERS_FROM_PROMO_USAGE_NAME}
+TO ${ANALYTICS_USERS_TABLE_NAME}
 AS
 SELECT
   toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) AS ${ANALYTICS_FIELDS.statsDate.key},
@@ -26,7 +32,7 @@ SELECT
   minState(${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key}) AS ${ANALYTICS_FIELDS.discountMin.key},
   maxState(${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key}) AS ${ANALYTICS_FIELDS.discountMax.key},
   avgState(${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key}) AS ${ANALYTICS_FIELDS.discountAvg.key}
-FROM raw_promo_code_usage
+FROM ${RAW_PROMO_CODE_USAGE_TABLE_NAME}
 GROUP BY ${ANALYTICS_FIELDS.statsDate.key}, ${USER_FIELD_MAP.id.key}, ${USER_IDENTITY_FIELD_MAP.email.key},
   ${USER_FIELD_MAP.name.key}, ${USER_FIELD_MAP.phone.key}
 `,

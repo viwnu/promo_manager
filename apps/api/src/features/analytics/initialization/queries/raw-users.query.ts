@@ -16,11 +16,13 @@ const RAW_USERS_FIELDS = {
   createdAt: { key: 'created_at', type: 'DateTime' },
 } as const satisfies Record<string, AnalyticsColumn>;
 
+export const RAW_USERS_TABLE_NAME = 'raw_users';
+
 export const RAW_USERS_TABLE: ClickHouseInitQuery = {
-  name: 'raw_users',
+  name: RAW_USERS_TABLE_NAME,
   sql: `
-DROP TABLE IF EXISTS raw_users;
-CREATE TABLE IF NOT EXISTS raw_users (
+DROP TABLE IF EXISTS ${RAW_USERS_TABLE_NAME};
+CREATE TABLE IF NOT EXISTS ${RAW_USERS_TABLE_NAME} (
   ${USER_FIELD_MAP.id.key} ${USER_FIELD_MAP.id.type},
   ${USER_IDENTITY_FIELD_MAP.email.key} ${USER_IDENTITY_FIELD_MAP.email.type},
   ${USER_FIELD_MAP.name.key} ${USER_FIELD_MAP.name.type},

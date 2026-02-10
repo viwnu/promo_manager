@@ -22,11 +22,13 @@ export const PROMO_CODE_USAGE_USER_FIELDS = {
   phone: { key: 'phone', type: 'String' },
 } as const satisfies Record<keyof Pick<User, 'name' | 'phone'> | keyof Pick<UserIdentity, 'email'>, AnalyticsColumn>;
 
+export const RAW_PROMO_CODE_USAGE_TABLE_NAME = 'raw_promo_code_usage';
+
 export const RAW_PROMO_CODE_USAGE_TABLE: ClickHouseInitQuery = {
-  name: 'raw_promo_code_usage',
+  name: RAW_PROMO_CODE_USAGE_TABLE_NAME,
   sql: `
-DROP TABLE IF EXISTS raw_promo_code_usage;
-CREATE TABLE IF NOT EXISTS raw_promo_code_usage (
+DROP TABLE IF EXISTS ${RAW_PROMO_CODE_USAGE_TABLE_NAME};
+CREATE TABLE IF NOT EXISTS ${RAW_PROMO_CODE_USAGE_TABLE_NAME} (
   ${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key} ${PROMO_CODE_USAGE_FIELD_MAP.createdAt.type},
   ${PROMO_CODE_USAGE_FIELD_MAP.promoCodeId.key} ${PROMO_CODE_USAGE_FIELD_MAP.promoCodeId.type},
   ${PROMO_CODE_CODE_FIELD.key} ${PROMO_CODE_CODE_FIELD.type},

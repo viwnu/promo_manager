@@ -3,7 +3,7 @@ import { CLICKHOUSE_ASYNC_INSTANCE_TOKEN, ClickHouseClient } from '@depyronick/n
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { PromoCode } from '../promo-codes/schema';
+import { PromoCode, PromoCodeDocument } from '../promo-codes/schema';
 import { Order, OrderDocument, PromoCodeUsage, PromoCodeUsageDocument } from '../orders/schema';
 import { User, UserDocument } from '../users/schema';
 import { USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from './initialization/queries/analytics-users.query';
@@ -14,6 +14,9 @@ import {
   PROMO_CODE_USAGE_FIELD_MAP,
   PROMO_CODE_USAGE_USER_FIELDS,
 } from './initialization/queries/raw-promo-code-usage.query';
+import { RAW_ORDERS_TABLE_NAME } from './initialization/queries/raw-orders.query';
+import { RAW_PROMO_CODE_USAGE_TABLE_NAME } from './initialization/queries/raw-promo-code-usage.query';
+import { RAW_USERS_TABLE_NAME } from './initialization/queries/raw-users.query';
 
 @Injectable()
 export class BackfillService implements OnModuleInit {
@@ -24,14 +27,12 @@ export class BackfillService implements OnModuleInit {
     @InjectModel(PromoCodeUsage.name) private readonly promoCodeUsageModel: Model<PromoCodeUsageDocument>,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(PromoCode.name) private readonly promoCodeModel: Model<PromoCodeDocument>,
   ) {}
 
   async onModuleInit(): Promise<void> {
-    try {
-      await this.seedAnalyticsFromMongo();
-    } catch (error) {
-      this.logger.error('ClickHouse init failed', error as Error);
-    }
+    // Do not await for lazy processing
+    this.seedAnalyticsFromMongo().catch((error) => this.logger.error('ClickHouse init failed', error as Error));
   }
 
   private async seedAnalyticsFromMongo(): Promise<void> {
@@ -44,11 +45,11 @@ export class BackfillService implements OnModuleInit {
     for await (const rawUsers of this.batchCursor(usersCursor, readBatchSize)) {
       const rows = this.mapRawUsers(rawUsers);
       if (rows.length === 0) continue;
-      await this.insertBatched('raw_users', rows);
+      await this.insertBatched(RAW_USERS_TABLE_NAME, rows);
       rawUsersCount += rows.length;
     }
     if (rawUsersCount > 0) {
-      this.logger.log(`Inserted ${rawUsersCount} rows into raw_users`);
+      this.logger.log(`Inserted ${rawUsersCount} rows into ${RAW_USERS_TABLE_NAME}`);
     }
 
     let rawOrdersCount = 0;
@@ -60,14 +61,15 @@ export class BackfillService implements OnModuleInit {
     for await (const rawOrders of this.batchCursor(ordersCursor, readBatchSize)) {
       const rows = this.mapRawOrders(rawOrders);
       if (rows.length === 0) continue;
-      await this.insertBatched('raw_orders', rows);
+      await this.insertBatched(RAW_ORDERS_TABLE_NAME, rows);
       rawOrdersCount += rows.length;
     }
     if (rawOrdersCount > 0) {
-      this.logger.log(`Inserted ${rawOrdersCount} rows into raw_orders`);
+      this.logger.log(`Inserted ${rawOrdersCount} rows into ${RAW_ORDERS_TABLE_NAME}`);
     }
 
     let rawUsagesCount = 0;
+    const usedPromoCodeIds = new Set<string>();
     const usagesCursor = this.promoCodeUsageModel
       .find()
       .populate([
@@ -78,22 +80,55 @@ export class BackfillService implements OnModuleInit {
       .lean()
       .cursor();
     for await (const rawUsages of this.batchCursor(usagesCursor, readBatchSize)) {
+      for (const usage of rawUsages as any[]) {
+        const promoCodeId = this.toId(usage.promoCodeId ?? {});
+        if (promoCodeId) usedPromoCodeIds.add(promoCodeId);
+      }
       const rows = this.mapRawPromoCodeUsage(rawUsages);
       if (rows.length === 0) continue;
-      await this.insertBatched('raw_promo_code_usage', rows);
+      await this.insertBatched(RAW_PROMO_CODE_USAGE_TABLE_NAME, rows);
       rawUsagesCount += rows.length;
     }
     if (rawUsagesCount === 0) {
       this.logger.log('No promo code usages found. Analytics promo usage table left empty.');
-      return;
+    } else {
+      this.logger.log(`Inserted ${rawUsagesCount} rows into ${RAW_PROMO_CODE_USAGE_TABLE_NAME}`);
     }
-    this.logger.log(`Inserted ${rawUsagesCount} rows into raw_promo_code_usage`);
+
+    let unusedPromoCodesCount = 0;
+    const unusedPromoCodesCursor = this.promoCodeModel
+      .find(usedPromoCodeIds.size > 0 ? { _id: { $nin: Array.from(usedPromoCodeIds) } } : {})
+      .lean()
+      .cursor();
+
+    for await (const promoCodesBatch of this.batchCursor(unusedPromoCodesCursor, readBatchSize)) {
+      const rows = (promoCodesBatch as any[]).map((promoCode) => ({
+        [PROMO_CODE_USAGE_FIELD_MAP.createdAt.key]: this.formatDateTime((promoCode as any).createdAt ?? new Date()),
+        [PROMO_CODE_USAGE_FIELD_MAP.promoCodeId.key]: this.toId(promoCode),
+        [PROMO_CODE_CODE_FIELD.key]: promoCode.code ?? '',
+        [PROMO_CODE_USAGE_FIELD_MAP.userId.key]: '',
+        [PROMO_CODE_USAGE_FIELD_MAP.orderId.key]: '',
+        [PROMO_CODE_USAGE_USER_FIELDS.email.key]: '',
+        [PROMO_CODE_USAGE_USER_FIELDS.name.key]: '',
+        [PROMO_CODE_USAGE_USER_FIELDS.phone.key]: '',
+        [PROMO_CODE_USAGE_FIELD_MAP.orderAmount.key]: 0,
+        [PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key]: 0,
+      }));
+
+      if (rows.length === 0) continue;
+      await this.insertBatched(RAW_PROMO_CODE_USAGE_TABLE_NAME, rows);
+      unusedPromoCodesCount += rows.length;
+    }
+
+    if (unusedPromoCodesCount > 0) {
+      this.logger.log(`Inserted ${unusedPromoCodesCount} unused promo codes into ${RAW_PROMO_CODE_USAGE_TABLE_NAME}`);
+    }
   }
 
   private async truncateRawTables(): Promise<void> {
-    await this.clickhouse.queryPromise('TRUNCATE TABLE IF EXISTS raw_users');
-    await this.clickhouse.queryPromise('TRUNCATE TABLE IF EXISTS raw_orders');
-    await this.clickhouse.queryPromise('TRUNCATE TABLE IF EXISTS raw_promo_code_usage');
+    await this.clickhouse.queryPromise(`TRUNCATE TABLE IF EXISTS ${RAW_USERS_TABLE_NAME}`);
+    await this.clickhouse.queryPromise(`TRUNCATE TABLE IF EXISTS ${RAW_ORDERS_TABLE_NAME}`);
+    await this.clickhouse.queryPromise(`TRUNCATE TABLE IF EXISTS ${RAW_PROMO_CODE_USAGE_TABLE_NAME}`);
   }
 
   public mapRawUsers(users: any[]): Record<string, any>[] {

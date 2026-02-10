@@ -7,6 +7,7 @@ import {
   PROMO_CODE_USAGE_FIELD_MAP,
   PROMO_CODE_USAGE_USER_FIELDS,
 } from '../initialization/queries/raw-promo-code-usage.query';
+import { RAW_PROMO_CODE_USAGE_TABLE_NAME } from '../initialization/queries/raw-promo-code-usage.query';
 
 @EventsHandler(PromoCodeAppliedEvent)
 export class PromoCodeAppliedHandler implements IEventHandler<PromoCodeAppliedEvent> {
@@ -39,7 +40,7 @@ export class PromoCodeAppliedHandler implements IEventHandler<PromoCodeAppliedEv
         console.warn('[analytics] PromoCodeAppliedEvent produced no rows');
         return;
       }
-      await this.backfillService.insertBatched('raw_promo_code_usage', rows);
+      await this.backfillService.insertBatched(RAW_PROMO_CODE_USAGE_TABLE_NAME, rows);
       console.log('[analytics] PromoCodeAppliedEvent processed', {
         promoCodeId: payload.promoCodeId,
         orderId: payload.orderId,
