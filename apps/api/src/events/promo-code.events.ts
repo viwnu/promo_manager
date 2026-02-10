@@ -11,7 +11,3 @@ export interface PromoCodeEventPayload {
 export class PromoCodeCreatedEvent implements IEvent {
   constructor(public readonly payload: PromoCodeEventPayload) {}
 }
-
-export class PromoCodeUpdatedEvent implements IEvent {
-  constructor(public readonly payload: PromoCodeEventPayload) {}
-}

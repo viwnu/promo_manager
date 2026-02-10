@@ -16,7 +16,7 @@ export class UserCreatedHandler implements IEventHandler<UserCreatedEvent> {
         return;
       }
 
-    const rows = this.backfillService.mapRawUsers([
+      const rows = this.backfillService.mapRawUsers([
         {
           id: payload.id,
           name: payload.name,

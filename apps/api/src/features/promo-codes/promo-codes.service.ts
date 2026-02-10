@@ -5,7 +5,7 @@ import { EventBus } from '@nestjs/cqrs';
 
 import { PromoCode } from './schema';
 import { CreatePromoCodeDto, PromoCodeViewDto, UpdatePromoCodeDto } from './dto';
-import { PromoCodeCreatedEvent, PromoCodeUpdatedEvent } from '../../events';
+import { PromoCodeCreatedEvent } from '../../events';
 
 @Injectable()
 export class PromoCodesService {
@@ -52,15 +52,6 @@ export class PromoCodesService {
     const updated = await this.promoCodeModel.findByIdAndUpdate(id, dto, { new: true }).exec();
     if (!updated) throw new NotFoundException('Promo code not found');
 
-    this.eventBus.publish(
-      new PromoCodeUpdatedEvent({
-        id: updated.id ?? updated._id?.toString?.(),
-        code: updated.code,
-        active: updated.active,
-        createdAt: (updated as any).createdAt,
-        updatedAt: (updated as any).updatedAt,
-      }),
-    );
     return updated;
   }
 
@@ -68,15 +59,6 @@ export class PromoCodesService {
     const updated = await this.promoCodeModel.findByIdAndUpdate(id, { active: false }, { new: true }).exec();
     if (!updated) throw new NotFoundException('Promo code not found');
 
-    this.eventBus.publish(
-      new PromoCodeUpdatedEvent({
-        id: updated.id ?? updated._id?.toString?.(),
-        code: updated.code,
-        active: updated.active,
-        createdAt: (updated as any).createdAt,
-        updatedAt: (updated as any).updatedAt,
-      }),
-    );
     return updated;
   }
 }

@@ -6,13 +6,7 @@ import { ClickHouseConfigService } from './config';
 import { BackfillService } from './backfill.service';
 import { AnalyticService } from './analytic.service';
 import { AnalyticsController } from './analytics.controller';
-import {
-  PromoCodeAppliedHandler,
-  PromoCodeCreatedHandler,
-  PromoCodeUpdatedHandler,
-  UserCreatedHandler,
-  UserUpdatedHandler,
-} from './events';
+import { PromoCodeAppliedHandler, PromoCodeCreatedHandler, UserCreatedHandler, UserUpdatedHandler } from './events';
 import { PromoCode, PromoCodeSchema } from '../promo-codes/schema';
 import { Order, OrderSchema, PromoCodeUsage, PromoCodeUsageSchema } from '../orders/schema';
 import { User, UserSchema } from '../users/schema';
@@ -27,7 +21,6 @@ import { UsersModule } from '../users/users.module';
     UserUpdatedHandler,
     PromoCodeAppliedHandler,
     PromoCodeCreatedHandler,
-    PromoCodeUpdatedHandler,
   ],
   imports: [
     CqrsModule,
