@@ -1,3 +1,5 @@
+import { AnalyticsDatePreset, AnalyticsListOptions, AnalyticsListResult } from './analytics-base.types';
+
 export interface AnalyticsUserAggregatedStats {
   user_id: string;
   email: string;
@@ -16,26 +18,16 @@ export interface AnalyticsUserAggregatedStats {
   discount_avg: string;
 }
 
-export interface AnalyticsUsersAggregatedStatsResult {
-  items: AnalyticsUserAggregatedStats[];
-  total: number;
-}
+export type AnalyticsUsersAggregatedStatsResult = AnalyticsListResult<AnalyticsUserAggregatedStats>;
+export type AnalyticsUsersDatePreset = AnalyticsDatePreset;
 
-export type AnalyticsUsersDatePreset = 'today' | 'last7Days' | 'last30Days' | 'custom';
-
-export interface AnalyticsUsersAggregatedStatsOptions {
-  datePreset?: AnalyticsUsersDatePreset;
-  from?: Date | string;
-  to?: Date | string;
-  limit?: number;
-  offset?: number;
-  sortBy?: keyof AnalyticsUserAggregatedStats;
-  sortDir?: 'asc' | 'desc';
-  filter?: {
+export type AnalyticsUsersAggregatedStatsOptions = AnalyticsListOptions<
+  keyof AnalyticsUserAggregatedStats,
+  {
     userId?: string;
     email?: string;
     name?: string;
     phone?: string;
     search?: string;
-  };
-}
+  }
+>;

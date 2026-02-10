@@ -11,30 +11,27 @@ import {
   AnalyticsUserAggregatedStats,
   AnalyticsUsersAggregatedStatsOptions,
   AnalyticsUsersAggregatedStatsResult,
-} from './types/analytics-users.types';
-import {
   AnalyticsPromoCodeAggregatedStats,
   AnalyticsPromoCodesAggregatedStatsOptions,
   AnalyticsPromoCodesAggregatedStatsResult,
-} from './types/analytics-promo-codes.types';
-import {
   AnalyticsPromoCodeUsageHistoryItem,
   AnalyticsPromoCodeUsageHistoryOptions,
   AnalyticsPromoCodeUsageHistoryResult,
-} from './types/analytics-promo-code-usage.types';
-import { escapeString, formatDate, resolveDateRange, resolveSortField } from './utils/analytics-users.utils';
+} from './types';
 import {
+  escapeString,
+  formatDate,
+  resolveDateRange,
+  resolveUsersSortField,
+  resolvePromoCodesSortField,
+  resolvePromoCodeUsageSortField,
   escapeString as escapePromoString,
   formatDate as formatPromoDate,
   resolveDateRange as resolvePromoDateRange,
-  resolveSortField as resolvePromoSortField,
-} from './utils/analytics-promo-codes.utils';
-import {
   escapeString as escapeUsageString,
   formatDate as formatUsageDate,
   resolveDateRange as resolveUsageDateRange,
-  resolveSortField as resolveUsageSortField,
-} from './utils/analytics-promo-code-usage.utils';
+} from './utils';
 import { AnalyticsUsersQueryDto } from './dto/analytics-users.query.dto';
 import { AnalyticsPromoCodesQueryDto } from './dto/analytics-promo-codes.query.dto';
 import { AnalyticsPromoCodeUsageQueryDto } from './dto/analytics-promo-code-usage.query.dto';
@@ -148,7 +145,7 @@ export class AnalyticService {
     }
 
     const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
-    const sortField = resolveSortField(options.sortBy);
+    const sortField = resolveUsersSortField(options.sortBy);
     const sortDir = options.sortDir?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     const orderByClause = `ORDER BY ${sortField} ${sortDir}`;
     const limitClause = typeof options.limit === 'number' ? `LIMIT ${options.limit}` : '';
@@ -219,7 +216,7 @@ ${baseQuery}
     }
 
     const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
-    const sortField = resolvePromoSortField(options.sortBy);
+    const sortField = resolvePromoCodesSortField(options.sortBy);
     const sortDir = options.sortDir?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     const orderByClause = `ORDER BY ${sortField} ${sortDir}`;
     const limitClause = typeof options.limit === 'number' ? `LIMIT ${options.limit}` : '';
@@ -268,14 +265,10 @@ ${baseQuery}
     const dateRange = resolveUsageDateRange(options);
     const whereParts: string[] = [];
     if (dateRange.from) {
-      whereParts.push(
-        `toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) >= toDate('${formatUsageDate(dateRange.from)}')`,
-      );
+      whereParts.push(`toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) >= toDate('${formatUsageDate(dateRange.from)}')`);
     }
     if (dateRange.to) {
-      whereParts.push(
-        `toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) <= toDate('${formatUsageDate(dateRange.to)}')`,
-      );
+      whereParts.push(`toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) <= toDate('${formatUsageDate(dateRange.to)}')`);
     }
 
     const filter = options.filter;
@@ -315,7 +308,7 @@ ${baseQuery}
     }
 
     const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
-    const sortField = resolveUsageSortField(options.sortBy);
+    const sortField = resolvePromoCodeUsageSortField(options.sortBy);
     const sortDir = options.sortDir?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     const orderByClause = `ORDER BY ${sortField} ${sortDir}`;
     const limitClause = typeof options.limit === 'number' ? `LIMIT ${options.limit}` : '';

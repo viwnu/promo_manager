@@ -1,3 +1,5 @@
+import { AnalyticsDatePreset, AnalyticsListOptions, AnalyticsListResult } from './analytics-base.types';
+
 export interface AnalyticsPromoCodeAggregatedStats {
   promo_code_id: string;
   code: string;
@@ -13,24 +15,14 @@ export interface AnalyticsPromoCodeAggregatedStats {
   discount_avg: string;
 }
 
-export interface AnalyticsPromoCodesAggregatedStatsResult {
-  items: AnalyticsPromoCodeAggregatedStats[];
-  total: number;
-}
+export type AnalyticsPromoCodesAggregatedStatsResult = AnalyticsListResult<AnalyticsPromoCodeAggregatedStats>;
+export type AnalyticsPromoCodesDatePreset = AnalyticsDatePreset;
 
-export type AnalyticsPromoCodesDatePreset = 'today' | 'last7Days' | 'last30Days' | 'custom';
-
-export interface AnalyticsPromoCodesAggregatedStatsOptions {
-  datePreset?: AnalyticsPromoCodesDatePreset;
-  from?: Date | string;
-  to?: Date | string;
-  limit?: number;
-  offset?: number;
-  sortBy?: keyof AnalyticsPromoCodeAggregatedStats;
-  sortDir?: 'asc' | 'desc';
-  filter?: {
+export type AnalyticsPromoCodesAggregatedStatsOptions = AnalyticsListOptions<
+  keyof AnalyticsPromoCodeAggregatedStats,
+  {
     promoCodeId?: string;
     code?: string;
     search?: string;
-  };
-}
+  }
+>;

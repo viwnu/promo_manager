@@ -1,33 +1,8 @@
 import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from '../initialization/queries/analytics-users.query';
-import { AnalyticsUserAggregatedStats, AnalyticsUsersDatePreset } from '../types/analytics-users.types';
+import { AnalyticsUserAggregatedStats } from '../types';
+import { escapeString, formatDate, resolveDateRange } from './analytics-shared.utils';
 
-export function formatDate(value: Date | string): string {
-  const date = value instanceof Date ? value : new Date(value);
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-export function resolveDateRange(options: {
-  datePreset?: AnalyticsUsersDatePreset;
-  from?: Date | string;
-  to?: Date | string;
-}): { from?: Date | string; to?: Date | string } {
-  const preset = options.datePreset;
-  if (!preset || preset === 'custom') {
-    return { from: options.from, to: options.to };
-  }
-
-  const today = new Date();
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (preset === 'today') {
-    return { from: end, to: end };
-  }
-
-  const days = preset === 'last7Days' ? 6 : 29;
-  const start = new Date(end);
-  start.setDate(start.getDate() - days);
-  return { from: start, to: end };
-}
+export { formatDate, resolveDateRange, escapeString };
 
 export function resolveSortField(sortBy?: keyof AnalyticsUserAggregatedStats): string {
   switch (sortBy) {
@@ -50,8 +25,4 @@ export function resolveSortField(sortBy?: keyof AnalyticsUserAggregatedStats): s
     default:
       return ANALYTICS_FIELDS.ordersCount.key;
   }
-}
-
-export function escapeString(value: string): string {
-  return value.replace(/'/g, "''");
 }

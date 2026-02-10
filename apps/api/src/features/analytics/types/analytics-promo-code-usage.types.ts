@@ -1,3 +1,5 @@
+import { AnalyticsDatePreset, AnalyticsListOptions, AnalyticsListResult } from './analytics-base.types';
+
 export interface AnalyticsPromoCodeUsageHistoryItem {
   used_at: string;
   promo_code_id: string;
@@ -11,22 +13,12 @@ export interface AnalyticsPromoCodeUsageHistoryItem {
   discount_amount: string;
 }
 
-export interface AnalyticsPromoCodeUsageHistoryResult {
-  items: AnalyticsPromoCodeUsageHistoryItem[];
-  total: number;
-}
+export type AnalyticsPromoCodeUsageHistoryResult = AnalyticsListResult<AnalyticsPromoCodeUsageHistoryItem>;
+export type AnalyticsPromoCodeUsageDatePreset = AnalyticsDatePreset;
 
-export type AnalyticsPromoCodeUsageDatePreset = 'today' | 'last7Days' | 'last30Days' | 'custom';
-
-export interface AnalyticsPromoCodeUsageHistoryOptions {
-  datePreset?: AnalyticsPromoCodeUsageDatePreset;
-  from?: Date | string;
-  to?: Date | string;
-  limit?: number;
-  offset?: number;
-  sortBy?: keyof AnalyticsPromoCodeUsageHistoryItem;
-  sortDir?: 'asc' | 'desc';
-  filter?: {
+export type AnalyticsPromoCodeUsageHistoryOptions = AnalyticsListOptions<
+  keyof AnalyticsPromoCodeUsageHistoryItem,
+  {
     promoCodeId?: string;
     code?: string;
     userId?: string;
@@ -35,5 +27,5 @@ export interface AnalyticsPromoCodeUsageHistoryOptions {
     name?: string;
     phone?: string;
     search?: string;
-  };
-}
+  }
+>;
