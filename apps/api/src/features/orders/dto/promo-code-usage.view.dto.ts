@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { ClassSerializerContextOptions } from '@nestjs/common';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsMongoId, IsNumber } from 'class-validator';
 
 import { PromoCodeUsage } from '../schema';
@@ -17,16 +17,19 @@ export class PromoCodeUsageViewDto
 
   @ApiProperty({ type: 'string', example: 'c47f3448-0a96-487f-b602-0a4529825fa2', description: 'Promo code id' })
   @IsMongoId()
+  @Transform(({ value }) => value.toString())
   @Expose()
   promoCodeId!: string;
 
   @ApiProperty({ type: 'string', example: 'c47f3448-0a96-487f-b602-0a4529825fa2', description: 'User id' })
   @IsMongoId()
+  @Transform(({ value }) => value.toString())
   @Expose()
   userId!: string;
 
   @ApiProperty({ type: 'string', example: 'c47f3448-0a96-487f-b602-0a4529825fa2', description: 'Order id' })
   @IsMongoId()
+  @Transform(({ value }) => value.toString())
   @Expose()
   orderId!: string;
 

@@ -1,6 +1,6 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ForbiddenException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import Decimal from 'decimal.js';
 import { EventBus } from '@nestjs/cqrs';
 
@@ -16,24 +16,27 @@ export class OrdersService {
     @InjectModel(PromoCode.name) private readonly promoCodeModel: Model<PromoCodeDocument>,
     @InjectModel(PromoCodeUsage.name) private readonly promoCodeUsageModel: Model<PromoCodeUsageDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectConnection() private readonly connection: Connection,
     private readonly eventBus: EventBus,
   ) {}
 
   async applyPromoCode(orderId: string, userId: string, code: string): Promise<PromoCodeUsageDocument> {
-    const order = await this.getOrderForUser(orderId, userId);
-    const promoCode = await this.getActivePromoCode(code);
-    await this.ensurePromoCodeLimits(promoCode, userId);
+    let eventPayload: PromoCodeAppliedEvent | null = null;
 
-    const discountAmount = this.calculateDiscountAmount(order.amount, promoCode.discount);
-    const usage = await this.createPromoCodeUsage(order, promoCode, discountAmount);
+    const usage = await this.transaction(async (session) => {
+      const order = await this.getOrderForUser(orderId, userId, session);
+      const promoCode = await this.getActivePromoCode(code, session);
+      await this.ensurePromoCodeLimits(promoCode, userId, session);
 
-    order.promoCode = promoCode.code;
-    await order.save();
+      const discountAmount = this.calculateDiscountAmount(order.amount, promoCode.discount);
+      const createdUsage = await this.createPromoCodeUsage(order, promoCode, discountAmount, session);
 
-    const user = await this.userModel.findById(order.userId).populate('userIdentity').lean();
-    this.eventBus.publish(
-      new PromoCodeAppliedEvent({
-        usedAt: usage.createdAt ?? new Date(),
+      order.promoCode = promoCode.code;
+      await order.save({ session });
+
+      const user = await this.userModel.findById(order.userId).populate('userIdentity').session(session).lean();
+      eventPayload = new PromoCodeAppliedEvent({
+        usedAt: createdUsage.createdAt ?? new Date(),
         promoCodeId: promoCode.id ?? promoCode._id?.toString?.(),
         code: promoCode.code,
         userId: order.userId?.toString?.() ?? '',
@@ -43,8 +46,14 @@ export class OrdersService {
         phone: user?.phone ?? '',
         orderAmount: order.amount ?? 0,
         discountAmount,
-      }),
-    );
+      });
+
+      return createdUsage;
+    });
+
+    if (eventPayload) {
+      this.eventBus.publish(eventPayload);
+    }
 
     return usage;
   }
@@ -53,15 +62,19 @@ export class OrdersService {
     return await this.orderModel.find({ userId }).exec();
   }
 
-  private async getOrderForUser(orderId: string, userId: string): Promise<OrderDocument> {
-    const order = await this.orderModel.findOne({ _id: orderId, userId }).exec();
+  private async getOrderForUser(orderId: string, userId: string, session?: ClientSession): Promise<OrderDocument> {
+    const query = this.orderModel.findOne({ _id: orderId, userId });
+    if (session) query.session(session);
+    const order = await query.exec();
     if (!order) throw new NotFoundException('Order not found');
     if (order.promoCode) throw new ForbiddenException('Promo code already applied');
     return order;
   }
 
-  private async getActivePromoCode(code: string): Promise<PromoCodeDocument> {
-    const promoCode = await this.promoCodeModel.findOne({ code }).exec();
+  private async getActivePromoCode(code: string, session?: ClientSession): Promise<PromoCodeDocument> {
+    const query = this.promoCodeModel.findOne({ code });
+    if (session) query.session(session);
+    const promoCode = await query.exec();
     if (!promoCode) throw new NotFoundException('Promo code not found');
     if (!promoCode.active) throw new ForbiddenException('Promo code is inactive');
     this.ensurePromoCodeValidityPeriod(promoCode);
@@ -78,14 +91,17 @@ export class OrdersService {
     }
   }
 
-  private async ensurePromoCodeLimits(promoCode: PromoCodeDocument, userId: string): Promise<void> {
-    const [overallUsed, perUserUsed] = await Promise.all([
-      this.promoCodeUsageModel.countDocuments({ promoCodeId: promoCode._id }),
-      this.promoCodeUsageModel.countDocuments({
-        promoCodeId: promoCode._id,
-        userId: new Types.ObjectId(userId),
-      }),
-    ]);
+  private async ensurePromoCodeLimits(promoCode: PromoCodeDocument, userId: string, session?: ClientSession): Promise<void> {
+    const overallQuery = this.promoCodeUsageModel.countDocuments({ promoCodeId: promoCode._id });
+    const perUserQuery = this.promoCodeUsageModel.countDocuments({
+      promoCodeId: promoCode._id,
+      userId: new Types.ObjectId(userId),
+    });
+    if (session) {
+      overallQuery.session(session);
+      perUserQuery.session(session);
+    }
+    const [overallUsed, perUserUsed] = await Promise.all([overallQuery, perUserQuery]);
 
     if (promoCode.limit?.overall !== undefined && overallUsed >= promoCode.limit.overall) {
       throw new ForbiddenException('Promo code usage limit reached');
@@ -103,12 +119,29 @@ export class OrdersService {
     order: OrderDocument,
     promoCode: PromoCodeDocument,
     discountAmount: number,
+    session?: ClientSession,
   ): Promise<PromoCodeUsageDocument> {
     return new this.promoCodeUsageModel({
       promoCodeId: promoCode._id,
       userId: order.userId,
       orderId: order._id,
       discountAmount,
-    }).save();
+    }).save({ session });
+  }
+
+  private async transaction<T>(callback: (session: ClientSession) => Promise<T>): Promise<T> {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    try {
+      const result = await callback(session);
+      await session.commitTransaction();
+      return result;
+    } catch (error) {
+      await session.abortTransaction();
+      if (error instanceof HttpException) throw error;
+      throw new HttpException('Please try Again later', 429);
+    } finally {
+      session.endSession();
+    }
   }
 }
