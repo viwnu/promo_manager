@@ -2,14 +2,14 @@ import { ClickHouseModule } from '@depyronick/nestjs-clickhouse';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ClickHouseConfigService } from './config';
-import { AnalyticsService } from './analytics.service';
+import { BackfillService } from './backfill.service';
 import { PromoCode, PromoCodeSchema } from '../promo-codes/schema';
 import { Order, OrderSchema, PromoCodeUsage, PromoCodeUsageSchema } from '../orders/schema';
 import { User, UserSchema } from '../users/schema';
 
 @Module({
   controllers: [],
-  providers: [AnalyticsService],
+  providers: [BackfillService],
   imports: [
     ClickHouseModule.registerAsync(ClickHouseConfigService()),
     MongooseModule.forFeature([

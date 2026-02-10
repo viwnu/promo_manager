@@ -16,8 +16,8 @@ import {
 } from './initialization/queries/raw-promo-code-usage.query';
 
 @Injectable()
-export class AnalyticsService implements OnModuleInit {
-  private readonly logger = new Logger(AnalyticsService.name);
+export class BackfillService implements OnModuleInit {
+  private readonly logger = new Logger(BackfillService.name);
 
   constructor(
     @Inject(CLICKHOUSE_ASYNC_INSTANCE_TOKEN) private readonly clickhouse: ClickHouseClient,
@@ -35,7 +35,40 @@ export class AnalyticsService implements OnModuleInit {
   }
 
   private async seedAnalyticsFromMongo(): Promise<void> {
-    const usages = await this.promoCodeUsageModel
+    await this.truncateRawTables();
+
+    const readBatchSize = 1000;
+
+    let rawUsersCount = 0;
+    const usersCursor = this.userModel.find().populate('userIdentity').lean().cursor();
+    for await (const rawUsers of this.batchCursor(usersCursor, readBatchSize)) {
+      const rows = this.mapRawUsers(rawUsers);
+      if (rows.length === 0) continue;
+      await this.insertBatched('raw_users', rows);
+      rawUsersCount += rows.length;
+    }
+    if (rawUsersCount > 0) {
+      this.logger.log(`Inserted ${rawUsersCount} rows into raw_users`);
+    }
+
+    let rawOrdersCount = 0;
+    const ordersCursor = this.orderModel
+      .find()
+      .populate({ path: 'userId', populate: { path: 'userIdentity', select: 'email active roles' } })
+      .lean()
+      .cursor();
+    for await (const rawOrders of this.batchCursor(ordersCursor, readBatchSize)) {
+      const rows = this.mapRawOrders(rawOrders);
+      if (rows.length === 0) continue;
+      await this.insertBatched('raw_orders', rows);
+      rawOrdersCount += rows.length;
+    }
+    if (rawOrdersCount > 0) {
+      this.logger.log(`Inserted ${rawOrdersCount} rows into raw_orders`);
+    }
+
+    let rawUsagesCount = 0;
+    const usagesCursor = this.promoCodeUsageModel
       .find()
       .populate([
         { path: 'userId', populate: { path: 'userIdentity', select: 'email active roles' } },
@@ -43,36 +76,18 @@ export class AnalyticsService implements OnModuleInit {
         { path: 'promoCodeId' },
       ])
       .lean()
-      .exec();
-    const orders = await this.orderModel
-      .find()
-      .populate({ path: 'userId', populate: { path: 'userIdentity', select: 'email active roles' } })
-      .lean()
-      .exec();
-    const users = await this.userModel.find().populate('userIdentity').lean().exec();
-
-    await this.truncateRawTables();
-
-    const rawUsers = this.mapRawUsers(users);
-    if (rawUsers.length > 0) {
-      await this.insertBatched('raw_users', rawUsers);
-      this.logger.log(`Inserted ${rawUsers.length} rows into raw_users`);
+      .cursor();
+    for await (const rawUsages of this.batchCursor(usagesCursor, readBatchSize)) {
+      const rows = this.mapRawPromoCodeUsage(rawUsages);
+      if (rows.length === 0) continue;
+      await this.insertBatched('raw_promo_code_usage', rows);
+      rawUsagesCount += rows.length;
     }
-
-    const rawOrders = this.mapRawOrders(orders);
-    if (rawOrders.length > 0) {
-      await this.insertBatched('raw_orders', rawOrders);
-      this.logger.log(`Inserted ${rawOrders.length} rows into raw_orders`);
-    }
-
-    if (usages.length === 0) {
+    if (rawUsagesCount === 0) {
       this.logger.log('No promo code usages found. Analytics promo usage table left empty.');
       return;
     }
-
-    const rows = this.mapRawPromoCodeUsage(usages);
-    await this.insertBatched('raw_promo_code_usage', rows);
-    this.logger.log(`Inserted ${rows.length} rows into raw_promo_code_usage`);
+    this.logger.log(`Inserted ${rawUsagesCount} rows into raw_promo_code_usage`);
   }
 
   private async truncateRawTables(): Promise<void> {
@@ -135,6 +150,20 @@ export class AnalyticsService implements OnModuleInit {
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
       await this.clickhouse.insertPromise(table, batch);
+    }
+  }
+
+  private async *batchCursor<T>(cursor: AsyncIterable<T>, batchSize: number): AsyncGenerator<T[]> {
+    let batch: T[] = [];
+    for await (const item of cursor) {
+      batch.push(item);
+      if (batch.length >= batchSize) {
+        yield batch;
+        batch = [];
+      }
+    }
+    if (batch.length > 0) {
+      yield batch;
     }
   }
 
