@@ -15,7 +15,7 @@ export class UserCreatedHandler implements IEventHandler<UserCreatedEvent> {
         return;
       }
 
-      const rows = this.backfillService.mapRawUsersRows([
+    const rows = this.backfillService.mapRawUsers([
         {
           id: payload.id,
           name: payload.name,
@@ -29,7 +29,7 @@ export class UserCreatedHandler implements IEventHandler<UserCreatedEvent> {
         console.warn('[analytics] UserCreatedEvent produced no rows', { userId: payload.id });
         return;
       }
-      await this.backfillService.insertRows('raw_users', rows);
+    await this.backfillService.insertBatched('raw_users', rows);
       console.log('[analytics] UserCreatedEvent processed', { userId: payload.id });
     } catch (error) {
       console.error('[analytics] UserCreatedEvent failed', error);

@@ -96,11 +96,7 @@ export class BackfillService implements OnModuleInit {
     await this.clickhouse.queryPromise('TRUNCATE TABLE IF EXISTS raw_promo_code_usage');
   }
 
-  public mapRawUsersRows(users: any[]): Record<string, any>[] {
-    return this.mapRawUsers(users);
-  }
-
-  private mapRawUsers(users: any[]): Record<string, any>[] {
+  public mapRawUsers(users: any[]): Record<string, any>[] {
     return users.map((user) => ({
       [USER_FIELD_MAP.id.key]: this.toId(user),
       [USER_IDENTITY_FIELD_MAP.email.key]: (user as any).userIdentity?.email ?? '',
@@ -110,11 +106,7 @@ export class BackfillService implements OnModuleInit {
     }));
   }
 
-  public mapRawOrdersRows(orders: any[]): Record<string, any>[] {
-    return this.mapRawOrders(orders);
-  }
-
-  private mapRawOrders(orders: any[]): Record<string, any>[] {
+  public mapRawOrders(orders: any[]): Record<string, any>[] {
     return orders.map((order) => {
       const user = order.userId as User | undefined;
       const userId = this.toId(user ?? {});
@@ -131,11 +123,7 @@ export class BackfillService implements OnModuleInit {
     });
   }
 
-  public mapRawPromoCodeUsageRows(usages: any[]): Record<string, any>[] {
-    return this.mapRawPromoCodeUsage(usages);
-  }
-
-  private mapRawPromoCodeUsage(usages: any[]): Record<string, any>[] {
+  public mapRawPromoCodeUsage(usages: any[]): Record<string, any>[] {
     return usages.map((usage) => {
       const promoCode = usage.promoCodeId as PromoCode | undefined;
       const user = usage.userId as User | undefined;
@@ -158,11 +146,7 @@ export class BackfillService implements OnModuleInit {
     });
   }
 
-  public async insertRows(table: string, rows: Record<string, any>[], batchSize = 1000): Promise<void> {
-    return this.insertBatched(table, rows, batchSize);
-  }
-
-  private async insertBatched(table: string, rows: Record<string, any>[], batchSize = 1000): Promise<void> {
+  public async insertBatched(table: string, rows: Record<string, any>[], batchSize = 1000): Promise<void> {
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
       await this.clickhouse.insertPromise(table, batch);
@@ -187,15 +171,11 @@ export class BackfillService implements OnModuleInit {
     return doc.id ?? doc._id?.toString?.() ?? '';
   }
 
-  private formatDateTime(value: Date | string): string {
+  public formatDateTime(value: Date | string): string {
     const date = value instanceof Date ? value : new Date(value);
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
       date.getMinutes(),
     )}:${pad(date.getSeconds())}`;
-  }
-
-  public formatDateTimeValue(value: Date | string): string {
-    return this.formatDateTime(value);
   }
 }

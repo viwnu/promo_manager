@@ -22,7 +22,7 @@ export class PromoCodeAppliedHandler implements IEventHandler<PromoCodeAppliedEv
 
       const rows = [
         {
-          [PROMO_CODE_USAGE_FIELD_MAP.createdAt.key]: this.backfillService.formatDateTimeValue(payload.usedAt),
+          [PROMO_CODE_USAGE_FIELD_MAP.createdAt.key]: this.backfillService.formatDateTime(payload.usedAt),
           [PROMO_CODE_USAGE_FIELD_MAP.promoCodeId.key]: payload.promoCodeId,
           [PROMO_CODE_CODE_FIELD.key]: payload.code ?? '',
           [PROMO_CODE_USAGE_FIELD_MAP.userId.key]: payload.userId,
@@ -39,7 +39,7 @@ export class PromoCodeAppliedHandler implements IEventHandler<PromoCodeAppliedEv
         console.warn('[analytics] PromoCodeAppliedEvent produced no rows');
         return;
       }
-      await this.backfillService.insertRows('raw_promo_code_usage', rows);
+      await this.backfillService.insertBatched('raw_promo_code_usage', rows);
       console.log('[analytics] PromoCodeAppliedEvent processed', {
         promoCodeId: payload.promoCodeId,
         orderId: payload.orderId,
