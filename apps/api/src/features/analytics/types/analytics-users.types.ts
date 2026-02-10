@@ -1,21 +1,19 @@
-import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from '../initialization/queries/analytics-users.query';
-
 export interface AnalyticsUserAggregatedStats {
-  [USER_FIELD_MAP.id.key]: string;
-  [USER_IDENTITY_FIELD_MAP.email.key]: string;
-  [USER_FIELD_MAP.name.key]: string;
-  [USER_FIELD_MAP.phone.key]: string;
-  [ANALYTICS_FIELDS.ordersCount.key]: number;
-  [ANALYTICS_FIELDS.ordersAmountSum.key]: string;
-  [ANALYTICS_FIELDS.ordersAmountMin.key]: string;
-  [ANALYTICS_FIELDS.ordersAmountMax.key]: string;
-  [ANALYTICS_FIELDS.ordersAmountAvg.key]: string;
-  [ANALYTICS_FIELDS.promoCodesUsed.key]: number;
-  [ANALYTICS_FIELDS.promoCodesUnique.key]: number;
-  [ANALYTICS_FIELDS.discountSum.key]: string;
-  [ANALYTICS_FIELDS.discountMin.key]: string;
-  [ANALYTICS_FIELDS.discountMax.key]: string;
-  [ANALYTICS_FIELDS.discountAvg.key]: string;
+  user_id: string;
+  email: string;
+  name: string;
+  phone: string;
+  orders_count: number;
+  orders_amount_sum: string;
+  orders_amount_min: string;
+  orders_amount_max: string;
+  orders_amount_avg: string;
+  promo_codes_used: number;
+  promo_codes_unique: number;
+  discount_sum: string;
+  discount_min: string;
+  discount_max: string;
+  discount_avg: string;
 }
 
 export interface AnalyticsUsersAggregatedStatsResult {

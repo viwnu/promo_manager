@@ -3,84 +3,83 @@ import { ClassSerializerContextOptions } from '@nestjs/common';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsArray, IsNumber, IsString } from 'class-validator';
 
-import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from '../initialization/queries/analytics-users.query';
 import { SerializedView } from '@app/serializer/interface';
 
 export class AnalyticsUserAggregatedStatsViewDto implements SerializedView {
   @ApiProperty({ type: 'string', example: 'c47f3448-0a96-487f-b602-0a4529825fa2', description: 'User id' })
   @IsString()
   @Expose()
-  [USER_FIELD_MAP.id.key]!: string;
+  user_id!: string;
 
   @ApiProperty({ type: 'string', example: 'user@email.com', description: 'Email' })
   @IsString()
   @Expose()
-  [USER_IDENTITY_FIELD_MAP.email.key]!: string;
+  email!: string;
 
   @ApiProperty({ type: 'string', example: 'John', description: 'Name' })
   @IsString()
   @Expose()
-  [USER_FIELD_MAP.name.key]!: string;
+  name!: string;
 
   @ApiProperty({ type: 'string', example: '+12025550123', description: 'Phone' })
   @IsString()
   @Expose()
-  [USER_FIELD_MAP.phone.key]!: string;
+  phone!: string;
 
   @ApiProperty({ type: 'number', example: 5, description: 'Orders count' })
   @IsNumber()
   @Expose()
-  [ANALYTICS_FIELDS.ordersCount.key]!: number;
+  orders_count!: number;
 
   @ApiProperty({ type: 'string', example: '199.99', description: 'Orders amount sum' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.ordersAmountSum.key]!: string;
+  orders_amount_sum!: string;
 
   @ApiProperty({ type: 'string', example: '10.00', description: 'Orders amount min' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.ordersAmountMin.key]!: string;
+  orders_amount_min!: string;
 
   @ApiProperty({ type: 'string', example: '500.00', description: 'Orders amount max' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.ordersAmountMax.key]!: string;
+  orders_amount_max!: string;
 
   @ApiProperty({ type: 'string', example: '120.50', description: 'Orders amount avg' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.ordersAmountAvg.key]!: string;
+  orders_amount_avg!: string;
 
   @ApiProperty({ type: 'number', example: 2, description: 'Promo codes used' })
   @IsNumber()
   @Expose()
-  [ANALYTICS_FIELDS.promoCodesUsed.key]!: number;
+  promo_codes_used!: number;
 
   @ApiProperty({ type: 'number', example: 2, description: 'Unique promo codes used' })
   @IsNumber()
   @Expose()
-  [ANALYTICS_FIELDS.promoCodesUnique.key]!: number;
+  promo_codes_unique!: number;
 
   @ApiProperty({ type: 'string', example: '15.00', description: 'Discount sum' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.discountSum.key]!: string;
+  discount_sum!: string;
 
   @ApiProperty({ type: 'string', example: '5.00', description: 'Discount min' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.discountMin.key]!: string;
+  discount_min!: string;
 
   @ApiProperty({ type: 'string', example: '20.00', description: 'Discount max' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.discountMax.key]!: string;
+  discount_max!: string;
 
   @ApiProperty({ type: 'string', example: '10.00', description: 'Discount avg' })
   @IsString()
   @Expose()
-  [ANALYTICS_FIELDS.discountAvg.key]!: string;
+  discount_avg!: string;
 
   static serializerOptions: ClassSerializerContextOptions = {
     strategy: 'excludeAll',

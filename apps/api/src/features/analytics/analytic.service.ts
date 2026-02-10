@@ -1,13 +1,26 @@
 import { CLICKHOUSE_ASYNC_INSTANCE_TOKEN, ClickHouseClient } from '@depyronick/nestjs-clickhouse';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from './initialization/queries/analytics-users.query';
+import { ANALYTICS_PROMO_CODES_FIELDS, PROMO_CODE_FIELD_MAP } from './initialization/queries/analytics-promo-codes.query';
 import {
   AnalyticsUserAggregatedStats,
   AnalyticsUsersAggregatedStatsOptions,
   AnalyticsUsersAggregatedStatsResult,
 } from './types/analytics-users.types';
+import {
+  AnalyticsPromoCodeAggregatedStats,
+  AnalyticsPromoCodesAggregatedStatsOptions,
+  AnalyticsPromoCodesAggregatedStatsResult,
+} from './types/analytics-promo-codes.types';
 import { escapeString, formatDate, resolveDateRange, resolveSortField } from './utils/analytics-users.utils';
+import {
+  escapeString as escapePromoString,
+  formatDate as formatPromoDate,
+  resolveDateRange as resolvePromoDateRange,
+  resolveSortField as resolvePromoSortField,
+} from './utils/analytics-promo-codes.utils';
 import { AnalyticsUsersQueryDto } from './dto/analytics-users.query.dto';
+import { AnalyticsPromoCodesQueryDto } from './dto/analytics-promo-codes.query.dto';
 
 @Injectable()
 export class AnalyticService {
@@ -34,6 +47,29 @@ export class AnalyticService {
 
   async getUsersAggregatedStatsFromQuery(query: AnalyticsUsersQueryDto): Promise<AnalyticsUsersAggregatedStatsResult> {
     return this.getUsersAggregatedStats(this.mapQueryToOptions(query));
+  }
+
+  async getPromoCodesAggregatedStats(
+    options: AnalyticsPromoCodesAggregatedStatsOptions = {},
+  ): Promise<AnalyticsPromoCodesAggregatedStatsResult> {
+    const normalizedOptions = this.normalizePromoCodesAggregatedOptions(options);
+    const { itemsQuery, countQuery } = this.buildPromoCodesAggregatedQueries(normalizedOptions);
+
+    const [items, totalRows] = await Promise.all([
+      this.queryRows<AnalyticsPromoCodeAggregatedStats>(itemsQuery),
+      this.queryRows<{ total: number }>(countQuery),
+    ]);
+
+    return {
+      items,
+      total: totalRows[0]?.total ?? 0,
+    };
+  }
+
+  async getPromoCodesAggregatedStatsFromQuery(
+    query: AnalyticsPromoCodesQueryDto,
+  ): Promise<AnalyticsPromoCodesAggregatedStatsResult> {
+    return this.getPromoCodesAggregatedStats(this.mapPromoQueryToOptions(query));
   }
 
   private buildUsersAggregatedQueries(options: AnalyticsUsersAggregatedStatsOptions): {
@@ -117,6 +153,74 @@ ${baseQuery}
     return { itemsQuery, countQuery };
   }
 
+  private buildPromoCodesAggregatedQueries(options: AnalyticsPromoCodesAggregatedStatsOptions): {
+    itemsQuery: string;
+    countQuery: string;
+  } {
+    const dateRange = resolvePromoDateRange(options);
+    const whereParts: string[] = [];
+    if (dateRange.from) {
+      whereParts.push(`${ANALYTICS_PROMO_CODES_FIELDS.statsDate.key} >= toDate('${formatPromoDate(dateRange.from)}')`);
+    }
+    if (dateRange.to) {
+      whereParts.push(`${ANALYTICS_PROMO_CODES_FIELDS.statsDate.key} <= toDate('${formatPromoDate(dateRange.to)}')`);
+    }
+
+    const filter = options.filter;
+    if (filter?.promoCodeId) {
+      whereParts.push(`${PROMO_CODE_FIELD_MAP.id.key} = '${escapePromoString(filter.promoCodeId)}'`);
+    }
+    if (filter?.code) {
+      whereParts.push(`${PROMO_CODE_FIELD_MAP.code.key} = '${escapePromoString(filter.code)}'`);
+    }
+    if (filter?.search) {
+      const term = escapePromoString(filter.search);
+      whereParts.push(`positionCaseInsensitive(${PROMO_CODE_FIELD_MAP.code.key}, '${term}') > 0`);
+    }
+
+    const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+    const sortField = resolvePromoSortField(options.sortBy);
+    const sortDir = options.sortDir?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    const orderByClause = `ORDER BY ${sortField} ${sortDir}`;
+    const limitClause = typeof options.limit === 'number' ? `LIMIT ${options.limit}` : '';
+    const offsetClause = typeof options.offset === 'number' ? `OFFSET ${options.offset}` : '';
+
+    const baseQuery = `
+SELECT
+  ${PROMO_CODE_FIELD_MAP.id.key} AS ${PROMO_CODE_FIELD_MAP.id.key},
+  ${PROMO_CODE_FIELD_MAP.code.key} AS ${PROMO_CODE_FIELD_MAP.code.key},
+  countMerge(${ANALYTICS_PROMO_CODES_FIELDS.usesCount.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.usesCount.key},
+  uniqExactMerge(${ANALYTICS_PROMO_CODES_FIELDS.uniqueUsers.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.uniqueUsers.key},
+  sumMerge(${ANALYTICS_PROMO_CODES_FIELDS.revenueSum.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.revenueSum.key},
+  minMerge(${ANALYTICS_PROMO_CODES_FIELDS.orderAmountMin.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.orderAmountMin.key},
+  maxMerge(${ANALYTICS_PROMO_CODES_FIELDS.orderAmountMax.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.orderAmountMax.key},
+  avgMerge(${ANALYTICS_PROMO_CODES_FIELDS.orderAmountAvg.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.orderAmountAvg.key},
+  sumMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountSum.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountSum.key},
+  minMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountMin.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountMin.key},
+  maxMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountMax.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountMax.key},
+  avgMerge(${ANALYTICS_PROMO_CODES_FIELDS.discountAvg.key}) AS ${ANALYTICS_PROMO_CODES_FIELDS.discountAvg.key}
+FROM analytics_promo_codes
+${whereClause}
+GROUP BY ${PROMO_CODE_FIELD_MAP.id.key}, ${PROMO_CODE_FIELD_MAP.code.key}
+`;
+
+    const itemsQuery = `
+${baseQuery}
+${orderByClause}
+${limitClause}
+${offsetClause}
+`;
+
+    const countQuery = `
+SELECT count() AS total
+FROM (
+${baseQuery}
+)
+`;
+
+    return { itemsQuery, countQuery };
+  }
+
   private normalizeUsersAggregatedOptions(options: AnalyticsUsersAggregatedStatsOptions): AnalyticsUsersAggregatedStatsOptions {
     const filter = options.filter ?? {};
     return {
@@ -127,6 +231,21 @@ ${baseQuery}
         email: filter.email,
         name: filter.name,
         phone: filter.phone,
+        search: filter.search,
+      },
+    };
+  }
+
+  private normalizePromoCodesAggregatedOptions(
+    options: AnalyticsPromoCodesAggregatedStatsOptions,
+  ): AnalyticsPromoCodesAggregatedStatsOptions {
+    const filter = options.filter ?? {};
+    return {
+      ...options,
+      sortBy: options.sortBy as AnalyticsPromoCodesAggregatedStatsOptions['sortBy'],
+      filter: {
+        promoCodeId: filter.promoCodeId,
+        code: filter.code,
         search: filter.search,
       },
     };
@@ -146,6 +265,23 @@ ${baseQuery}
         email: query.email,
         name: query.name,
         phone: query.phone,
+        search: query.search,
+      },
+    };
+  }
+
+  private mapPromoQueryToOptions(query: AnalyticsPromoCodesQueryDto): AnalyticsPromoCodesAggregatedStatsOptions {
+    return {
+      datePreset: query.datePreset,
+      from: query.from,
+      to: query.to,
+      limit: query.limit,
+      offset: query.offset,
+      sortBy: query.sortBy as AnalyticsPromoCodesAggregatedStatsOptions['sortBy'],
+      sortDir: query.sortDir,
+      filter: {
+        promoCodeId: query.promoCodeId,
+        code: query.code,
         search: query.search,
       },
     };
