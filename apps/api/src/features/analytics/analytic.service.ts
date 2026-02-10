@@ -3,6 +3,11 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ANALYTICS_FIELDS, USER_FIELD_MAP, USER_IDENTITY_FIELD_MAP } from './initialization/queries/analytics-users.query';
 import { ANALYTICS_PROMO_CODES_FIELDS, PROMO_CODE_FIELD_MAP } from './initialization/queries/analytics-promo-codes.query';
 import {
+  PROMO_CODE_USAGE_FIELD_MAP,
+  PROMO_CODE_USAGE_USER_FIELDS,
+  PROMO_CODE_CODE_FIELD,
+} from './initialization/queries/raw-promo-code-usage.query';
+import {
   AnalyticsUserAggregatedStats,
   AnalyticsUsersAggregatedStatsOptions,
   AnalyticsUsersAggregatedStatsResult,
@@ -12,6 +17,11 @@ import {
   AnalyticsPromoCodesAggregatedStatsOptions,
   AnalyticsPromoCodesAggregatedStatsResult,
 } from './types/analytics-promo-codes.types';
+import {
+  AnalyticsPromoCodeUsageHistoryItem,
+  AnalyticsPromoCodeUsageHistoryOptions,
+  AnalyticsPromoCodeUsageHistoryResult,
+} from './types/analytics-promo-code-usage.types';
 import { escapeString, formatDate, resolveDateRange, resolveSortField } from './utils/analytics-users.utils';
 import {
   escapeString as escapePromoString,
@@ -19,8 +29,15 @@ import {
   resolveDateRange as resolvePromoDateRange,
   resolveSortField as resolvePromoSortField,
 } from './utils/analytics-promo-codes.utils';
+import {
+  escapeString as escapeUsageString,
+  formatDate as formatUsageDate,
+  resolveDateRange as resolveUsageDateRange,
+  resolveSortField as resolveUsageSortField,
+} from './utils/analytics-promo-code-usage.utils';
 import { AnalyticsUsersQueryDto } from './dto/analytics-users.query.dto';
 import { AnalyticsPromoCodesQueryDto } from './dto/analytics-promo-codes.query.dto';
+import { AnalyticsPromoCodeUsageQueryDto } from './dto/analytics-promo-code-usage.query.dto';
 
 @Injectable()
 export class AnalyticService {
@@ -70,6 +87,29 @@ export class AnalyticService {
     query: AnalyticsPromoCodesQueryDto,
   ): Promise<AnalyticsPromoCodesAggregatedStatsResult> {
     return this.getPromoCodesAggregatedStats(this.mapPromoQueryToOptions(query));
+  }
+
+  async getPromoCodeUsageHistory(
+    options: AnalyticsPromoCodeUsageHistoryOptions = {},
+  ): Promise<AnalyticsPromoCodeUsageHistoryResult> {
+    const normalizedOptions = this.normalizePromoCodeUsageOptions(options);
+    const { itemsQuery, countQuery } = this.buildPromoCodeUsageQueries(normalizedOptions);
+
+    const [items, totalRows] = await Promise.all([
+      this.queryRows<AnalyticsPromoCodeUsageHistoryItem>(itemsQuery),
+      this.queryRows<{ total: number }>(countQuery),
+    ]);
+
+    return {
+      items,
+      total: totalRows[0]?.total ?? 0,
+    };
+  }
+
+  async getPromoCodeUsageHistoryFromQuery(
+    query: AnalyticsPromoCodeUsageQueryDto,
+  ): Promise<AnalyticsPromoCodeUsageHistoryResult> {
+    return this.getPromoCodeUsageHistory(this.mapPromoUsageQueryToOptions(query));
   }
 
   private buildUsersAggregatedQueries(options: AnalyticsUsersAggregatedStatsOptions): {
@@ -221,6 +261,99 @@ ${baseQuery}
     return { itemsQuery, countQuery };
   }
 
+  private buildPromoCodeUsageQueries(options: AnalyticsPromoCodeUsageHistoryOptions): {
+    itemsQuery: string;
+    countQuery: string;
+  } {
+    const dateRange = resolveUsageDateRange(options);
+    const whereParts: string[] = [];
+    if (dateRange.from) {
+      whereParts.push(
+        `toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) >= toDate('${formatUsageDate(dateRange.from)}')`,
+      );
+    }
+    if (dateRange.to) {
+      whereParts.push(
+        `toDate(${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key}) <= toDate('${formatUsageDate(dateRange.to)}')`,
+      );
+    }
+
+    const filter = options.filter;
+    if (filter?.promoCodeId) {
+      whereParts.push(`${PROMO_CODE_USAGE_FIELD_MAP.promoCodeId.key} = '${escapeUsageString(filter.promoCodeId)}'`);
+    }
+    if (filter?.code) {
+      whereParts.push(`${PROMO_CODE_CODE_FIELD.key} = '${escapeUsageString(filter.code)}'`);
+    }
+    if (filter?.userId) {
+      whereParts.push(`${PROMO_CODE_USAGE_FIELD_MAP.userId.key} = '${escapeUsageString(filter.userId)}'`);
+    }
+    if (filter?.orderId) {
+      whereParts.push(`${PROMO_CODE_USAGE_FIELD_MAP.orderId.key} = '${escapeUsageString(filter.orderId)}'`);
+    }
+    if (filter?.email) {
+      whereParts.push(`${PROMO_CODE_USAGE_USER_FIELDS.email.key} = '${escapeUsageString(filter.email)}'`);
+    }
+    if (filter?.name) {
+      whereParts.push(
+        `positionCaseInsensitive(${PROMO_CODE_USAGE_USER_FIELDS.name.key}, '${escapeUsageString(filter.name)}') > 0`,
+      );
+    }
+    if (filter?.phone) {
+      whereParts.push(
+        `positionCaseInsensitive(${PROMO_CODE_USAGE_USER_FIELDS.phone.key}, '${escapeUsageString(filter.phone)}') > 0`,
+      );
+    }
+    if (filter?.search) {
+      const term = escapeUsageString(filter.search);
+      whereParts.push(
+        `(positionCaseInsensitive(${PROMO_CODE_CODE_FIELD.key}, '${term}') > 0 OR ` +
+          `positionCaseInsensitive(${PROMO_CODE_USAGE_USER_FIELDS.email.key}, '${term}') > 0 OR ` +
+          `positionCaseInsensitive(${PROMO_CODE_USAGE_USER_FIELDS.name.key}, '${term}') > 0 OR ` +
+          `positionCaseInsensitive(${PROMO_CODE_USAGE_USER_FIELDS.phone.key}, '${term}') > 0)`,
+      );
+    }
+
+    const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+    const sortField = resolveUsageSortField(options.sortBy);
+    const sortDir = options.sortDir?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    const orderByClause = `ORDER BY ${sortField} ${sortDir}`;
+    const limitClause = typeof options.limit === 'number' ? `LIMIT ${options.limit}` : '';
+    const offsetClause = typeof options.offset === 'number' ? `OFFSET ${options.offset}` : '';
+
+    const baseQuery = `
+SELECT
+  ${PROMO_CODE_USAGE_FIELD_MAP.createdAt.key} AS used_at,
+  ${PROMO_CODE_USAGE_FIELD_MAP.promoCodeId.key} AS promo_code_id,
+  ${PROMO_CODE_CODE_FIELD.key} AS code,
+  ${PROMO_CODE_USAGE_FIELD_MAP.userId.key} AS user_id,
+  ${PROMO_CODE_USAGE_FIELD_MAP.orderId.key} AS order_id,
+  ${PROMO_CODE_USAGE_USER_FIELDS.email.key} AS email,
+  ${PROMO_CODE_USAGE_USER_FIELDS.name.key} AS name,
+  ${PROMO_CODE_USAGE_USER_FIELDS.phone.key} AS phone,
+  ${PROMO_CODE_USAGE_FIELD_MAP.orderAmount.key} AS order_amount,
+  ${PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key} AS discount_amount
+FROM raw_promo_code_usage
+${whereClause}
+`;
+
+    const itemsQuery = `
+${baseQuery}
+${orderByClause}
+${limitClause}
+${offsetClause}
+`;
+
+    const countQuery = `
+SELECT count() AS total
+FROM (
+${baseQuery}
+)
+`;
+
+    return { itemsQuery, countQuery };
+  }
+
   private normalizeUsersAggregatedOptions(options: AnalyticsUsersAggregatedStatsOptions): AnalyticsUsersAggregatedStatsOptions {
     const filter = options.filter ?? {};
     return {
@@ -246,6 +379,26 @@ ${baseQuery}
       filter: {
         promoCodeId: filter.promoCodeId,
         code: filter.code,
+        search: filter.search,
+      },
+    };
+  }
+
+  private normalizePromoCodeUsageOptions(
+    options: AnalyticsPromoCodeUsageHistoryOptions,
+  ): AnalyticsPromoCodeUsageHistoryOptions {
+    const filter = options.filter ?? {};
+    return {
+      ...options,
+      sortBy: options.sortBy as AnalyticsPromoCodeUsageHistoryOptions['sortBy'],
+      filter: {
+        promoCodeId: filter.promoCodeId,
+        code: filter.code,
+        userId: filter.userId,
+        orderId: filter.orderId,
+        email: filter.email,
+        name: filter.name,
+        phone: filter.phone,
         search: filter.search,
       },
     };
@@ -282,6 +435,28 @@ ${baseQuery}
       filter: {
         promoCodeId: query.promoCodeId,
         code: query.code,
+        search: query.search,
+      },
+    };
+  }
+
+  private mapPromoUsageQueryToOptions(query: AnalyticsPromoCodeUsageQueryDto): AnalyticsPromoCodeUsageHistoryOptions {
+    return {
+      datePreset: query.datePreset,
+      from: query.from,
+      to: query.to,
+      limit: query.limit,
+      offset: query.offset,
+      sortBy: query.sortBy as AnalyticsPromoCodeUsageHistoryOptions['sortBy'],
+      sortDir: query.sortDir,
+      filter: {
+        promoCodeId: query.promoCodeId,
+        code: query.code,
+        userId: query.userId,
+        orderId: query.orderId,
+        email: query.email,
+        name: query.name,
+        phone: query.phone,
         search: query.search,
       },
     };

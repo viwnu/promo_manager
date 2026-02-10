@@ -13,6 +13,8 @@ import {
   AnalyticsUsersAggregatedStatsViewDto,
   AnalyticsPromoCodesQueryDto,
   AnalyticsPromoCodesAggregatedStatsViewDto,
+  AnalyticsPromoCodeUsageQueryDto,
+  AnalyticsPromoCodeUsageHistoryViewDto,
 } from './dto';
 
 @ApiTags('Analytics')
@@ -46,5 +48,18 @@ export class AnalyticsController {
     @Query() query: AnalyticsPromoCodesQueryDto,
   ): Promise<AnalyticsPromoCodesAggregatedStatsViewDto> {
     return this.analyticService.getPromoCodesAggregatedStatsFromQuery(query);
+  }
+
+  @ApiDoc({
+    title: { summary: 'Get promo code usage history' },
+    responses: [{ status: 200, type: AnalyticsPromoCodeUsageHistoryViewDto, description: 'Usage history' }],
+    auth: 'bearer',
+  })
+  @SerializeView(AnalyticsPromoCodeUsageHistoryViewDto)
+  @Roles([ROLE.ADMIN])
+  @UseGuards(JwtAuthGuard, UserGuard, RolesGuard)
+  @Get('promo-code-usage')
+  getPromoCodeUsageHistory(@Query() query: AnalyticsPromoCodeUsageQueryDto): Promise<AnalyticsPromoCodeUsageHistoryViewDto> {
+    return this.analyticService.getPromoCodeUsageHistoryFromQuery(query);
   }
 }

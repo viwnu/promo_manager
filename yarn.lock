@@ -336,7 +336,7 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@depyronick/clickhouse-client@2.1.0", "@depyronick/clickhouse-client@^2.1.0":
+"@depyronick/clickhouse-client@2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@depyronick/clickhouse-client/-/clickhouse-client-2.1.0.tgz#b34437907a91726fc9ac13e9f43cb1838adec190"
   integrity sha512-g6126a8gDlvTDxUpwwYR1xbCTbo8SbSfokGQryjO9TKp17NokidurQug6oOaJk3cblq70Y8z8wT6YKtWyovjOg==
@@ -757,6 +757,11 @@
     iterare "1.2.1"
     path-to-regexp "3.3.0"
     tslib "2.8.1"
+
+"@nestjs/cqrs@^11.0.3":
+  version "11.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/cqrs/-/cqrs-11.0.3.tgz#aa6c482c12e883689955b07e3b8c4eb2b417d03d"
+  integrity sha512-2ezBftiXqVfNTzjCrmhazohYhIQzgm8rvM0aKndv73IOOBcVlNuNiQ3HHiHdd4c2w/3MOQDtsGbQHgZUuW6DPw==
 
 "@nestjs/jwt@^11.0.2":
   version "11.0.2"
