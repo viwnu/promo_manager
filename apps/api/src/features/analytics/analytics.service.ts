@@ -37,8 +37,20 @@ export class AnalyticsService implements OnModuleInit {
 
   private async seedAnalyticsFromMongo(): Promise<void> {
     const promoCodes = await this.promoCodeModel.find().lean().exec();
-    const usages = await this.promoCodeUsageModel.find().lean().exec();
-    const orders = await this.orderModel.find().lean().exec();
+    const usages = await this.promoCodeUsageModel
+      .find()
+      .populate([
+        { path: 'userId', populate: { path: 'userIdentity', select: 'email active roles' } },
+        { path: 'orderId' },
+        { path: 'promoCodeId' },
+      ])
+      .lean()
+      .exec();
+    const orders = await this.orderModel
+      .find()
+      .populate({ path: 'userId', populate: { path: 'userIdentity', select: 'email active roles' } })
+      .lean()
+      .exec();
     const users = await this.userModel.find().populate('userIdentity').lean().exec();
 
     const promoCodeById = this.buildPromoCodeMap(promoCodes);

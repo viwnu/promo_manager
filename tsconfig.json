@@ -18,36 +18,17 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@app/auth": [
-        "libs/shared/auth/src"
-      ],
-      "@app/auth/*": [
-        "libs/shared/auth/src/*"
-      ],
-      "@app/api-doc": [
-        "libs/shared/api-doc/src"
-      ],
-      "@app/api-doc/*": [
-        "libs/shared/api-doc/src/*"
-      ],
-      "@app/logger": [
-        "libs/shared/logger/src"
-      ],
-      "@app/logger/*": [
-        "libs/shared/logger/src/*"
-      ],
-      "@app/serializer": [
-        "libs/shared/serializer/src"
-      ],
-      "@app/serializer/*": [
-        "libs/shared/serializer/src/*"
-      ],
-      "@app/decorators": [
-        "libs/shared/decorators/src"
-      ],
-      "@app/decorators/*": [
-        "libs/shared/decorators/src/*"
-      ]
+      "@app/auth": ["libs/shared/auth/src"],
+      "@app/auth/*": ["libs/shared/auth/src/*"],
+      "@app/api-doc": ["libs/shared/api-doc/src"],
+      "@app/api-doc/*": ["libs/shared/api-doc/src/*"],
+      "@app/logger": ["libs/shared/logger/src"],
+      "@app/logger/*": ["libs/shared/logger/src/*"],
+      "@app/serializer": ["libs/shared/serializer/src"],
+      "@app/serializer/*": ["libs/shared/serializer/src/*"],
+      "@app/decorators": ["libs/shared/decorators/src"],
+      "@app/decorators/*": ["libs/shared/decorators/src/*"]
     }
-  }
+  },
+  "exclude": ["apps/web"]
 }

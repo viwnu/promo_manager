@@ -2,7 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import mongoose from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import * as request from 'supertest';
 import { isJWT } from 'class-validator';
@@ -21,7 +21,7 @@ describe('AuthController (e2e)', () => {
   let jwtService: JwtService;
 
   mongoose.connect(process.env.MONGO_URI);
-  const userIdentityModel: Model<UserIdentity> = mongoose.model(UserIdentity.name, UserIdentitySchema);
+  const userIdentityModel = mongoose.model<UserIdentity>(UserIdentity.name, UserIdentitySchema);
 
   beforeAll(async () => {
     await userIdentityModel.collection.drop();

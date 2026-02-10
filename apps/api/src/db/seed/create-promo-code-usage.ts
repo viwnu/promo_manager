@@ -8,5 +8,10 @@ export async function createPromoCodeUsage(
   orderId: mongoose.Types.ObjectId,
   discountAmount: number,
 ) {
-  return await new promoCodeUsageModel({ promoCodeId, userId, orderId, discountAmount }).save();
+  return await new promoCodeUsageModel({
+    promoCode: promoCodeId,
+    user: userId,
+    order: orderId,
+    discountAmount,
+  }).save();
 }
