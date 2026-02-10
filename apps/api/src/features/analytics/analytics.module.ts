@@ -3,13 +3,16 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ClickHouseConfigService } from './config';
 import { BackfillService } from './backfill.service';
+import { AnalyticService } from './analytic.service';
+import { AnalyticsController } from './analytics.controller';
 import { PromoCode, PromoCodeSchema } from '../promo-codes/schema';
 import { Order, OrderSchema, PromoCodeUsage, PromoCodeUsageSchema } from '../orders/schema';
 import { User, UserSchema } from '../users/schema';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  controllers: [],
-  providers: [BackfillService],
+  controllers: [AnalyticsController],
+  providers: [BackfillService, AnalyticService],
   imports: [
     ClickHouseModule.registerAsync(ClickHouseConfigService()),
     MongooseModule.forFeature([
@@ -18,6 +21,7 @@ import { User, UserSchema } from '../users/schema';
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
     ]),
+    UsersModule,
   ],
 })
 export class AnalyticsModule {}

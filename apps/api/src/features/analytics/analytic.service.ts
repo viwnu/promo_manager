@@ -7,6 +7,7 @@ import {
   AnalyticsUsersAggregatedStatsResult,
 } from './types/analytics-users.types';
 import { escapeString, formatDate, resolveDateRange, resolveSortField } from './utils/analytics-users.utils';
+import { AnalyticsUsersQueryDto } from './dto/analytics-users.query.dto';
 
 @Injectable()
 export class AnalyticService {
@@ -17,7 +18,8 @@ export class AnalyticService {
   async getUsersAggregatedStats(
     options: AnalyticsUsersAggregatedStatsOptions = {},
   ): Promise<AnalyticsUsersAggregatedStatsResult> {
-    const { itemsQuery, countQuery } = this.buildUsersAggregatedQueries(options);
+    const normalizedOptions = this.normalizeUsersAggregatedOptions(options);
+    const { itemsQuery, countQuery } = this.buildUsersAggregatedQueries(normalizedOptions);
 
     const [items, totalRows] = await Promise.all([
       this.queryRows<AnalyticsUserAggregatedStats>(itemsQuery),
@@ -28,6 +30,10 @@ export class AnalyticService {
       items,
       total: totalRows[0]?.total ?? 0,
     };
+  }
+
+  async getUsersAggregatedStatsFromQuery(query: AnalyticsUsersQueryDto): Promise<AnalyticsUsersAggregatedStatsResult> {
+    return this.getUsersAggregatedStats(this.mapQueryToOptions(query));
   }
 
   private buildUsersAggregatedQueries(options: AnalyticsUsersAggregatedStatsOptions): {
@@ -109,6 +115,40 @@ ${baseQuery}
 `;
 
     return { itemsQuery, countQuery };
+  }
+
+  private normalizeUsersAggregatedOptions(options: AnalyticsUsersAggregatedStatsOptions): AnalyticsUsersAggregatedStatsOptions {
+    const filter = options.filter ?? {};
+    return {
+      ...options,
+      sortBy: options.sortBy as AnalyticsUsersAggregatedStatsOptions['sortBy'],
+      filter: {
+        userId: filter.userId,
+        email: filter.email,
+        name: filter.name,
+        phone: filter.phone,
+        search: filter.search,
+      },
+    };
+  }
+
+  private mapQueryToOptions(query: AnalyticsUsersQueryDto): AnalyticsUsersAggregatedStatsOptions {
+    return {
+      datePreset: query.datePreset,
+      from: query.from,
+      to: query.to,
+      limit: query.limit,
+      offset: query.offset,
+      sortBy: query.sortBy as AnalyticsUsersAggregatedStatsOptions['sortBy'],
+      sortDir: query.sortDir,
+      filter: {
+        userId: query.userId,
+        email: query.email,
+        name: query.name,
+        phone: query.phone,
+        search: query.search,
+      },
+    };
   }
 
   private async queryRows<T>(query: string): Promise<T[]> {
