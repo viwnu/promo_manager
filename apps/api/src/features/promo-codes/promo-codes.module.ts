@@ -4,10 +4,11 @@ import { PromoCodesController } from './promo-codes.controller';
 import { PromoCode, PromoCodeSchema } from './schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from '../users/users.module';
+import { CqrsModule } from '@nestjs/cqrs';
 
 @Module({
   controllers: [PromoCodesController],
   providers: [PromoCodesService],
-  imports: [MongooseModule.forFeature([{ name: PromoCode.name, schema: PromoCodeSchema }]), UsersModule],
+  imports: [CqrsModule, MongooseModule.forFeature([{ name: PromoCode.name, schema: PromoCodeSchema }]), UsersModule],
 })
 export class PromoCodesModule {}

@@ -6,6 +6,7 @@ import { MongooseConfigService } from './db';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { LoggerModule } from '@app/logger';
+import { CqrsModule } from '@nestjs/cqrs';
 import { UsersModule } from './features/users/users.module';
 import { PromoCodesModule } from './features/promo-codes/promo-codes.module';
 import { OrdersModule } from './features/orders/orders.module';
@@ -27,6 +28,7 @@ import { AnalyticsModule } from './features/analytics/analytics.module';
         ]
       : []),
     LoggerModule,
+    CqrsModule,
     UsersModule,
     PromoCodesModule,
     OrdersModule,

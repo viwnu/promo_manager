@@ -96,6 +96,10 @@ export class BackfillService implements OnModuleInit {
     await this.clickhouse.queryPromise('TRUNCATE TABLE IF EXISTS raw_promo_code_usage');
   }
 
+  public mapRawUsersRows(users: any[]): Record<string, any>[] {
+    return this.mapRawUsers(users);
+  }
+
   private mapRawUsers(users: any[]): Record<string, any>[] {
     return users.map((user) => ({
       [USER_FIELD_MAP.id.key]: this.toId(user),
@@ -104,6 +108,10 @@ export class BackfillService implements OnModuleInit {
       [USER_FIELD_MAP.phone.key]: user.phone ?? '',
       [RAW_USERS_FIELDS_MAP.createdAt.key]: this.formatDateTime((user as any).createdAt ?? new Date()),
     }));
+  }
+
+  public mapRawOrdersRows(orders: any[]): Record<string, any>[] {
+    return this.mapRawOrders(orders);
   }
 
   private mapRawOrders(orders: any[]): Record<string, any>[] {
@@ -121,6 +129,10 @@ export class BackfillService implements OnModuleInit {
         [RAW_ORDERS_FIELD_MAP.createdAt.key]: this.formatDateTime(order.createdAt ?? new Date()),
       };
     });
+  }
+
+  public mapRawPromoCodeUsageRows(usages: any[]): Record<string, any>[] {
+    return this.mapRawPromoCodeUsage(usages);
   }
 
   private mapRawPromoCodeUsage(usages: any[]): Record<string, any>[] {
@@ -144,6 +156,10 @@ export class BackfillService implements OnModuleInit {
         [PROMO_CODE_USAGE_FIELD_MAP.discountAmount.key]: usage.discountAmount,
       };
     });
+  }
+
+  public async insertRows(table: string, rows: Record<string, any>[], batchSize = 1000): Promise<void> {
+    return this.insertBatched(table, rows, batchSize);
   }
 
   private async insertBatched(table: string, rows: Record<string, any>[], batchSize = 1000): Promise<void> {
@@ -177,5 +193,9 @@ export class BackfillService implements OnModuleInit {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
       date.getMinutes(),
     )}:${pad(date.getSeconds())}`;
+  }
+
+  public formatDateTimeValue(value: Date | string): string {
+    return this.formatDateTime(value);
   }
 }

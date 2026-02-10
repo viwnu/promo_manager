@@ -2,9 +2,12 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import Decimal from 'decimal.js';
+import { EventBus } from '@nestjs/cqrs';
 
 import { PromoCode, PromoCodeDocument } from '../promo-codes/schema';
 import { Order, OrderDocument, PromoCodeUsage, PromoCodeUsageDocument } from './schema';
+import { User, UserDocument } from '../users/schema';
+import { PromoCodeAppliedEvent } from '../../events';
 
 @Injectable()
 export class OrdersService {
@@ -12,6 +15,8 @@ export class OrdersService {
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     @InjectModel(PromoCode.name) private readonly promoCodeModel: Model<PromoCodeDocument>,
     @InjectModel(PromoCodeUsage.name) private readonly promoCodeUsageModel: Model<PromoCodeUsageDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly eventBus: EventBus,
   ) {}
 
   async applyPromoCode(orderId: string, userId: string, code: string): Promise<PromoCodeUsageDocument> {
@@ -24,6 +29,22 @@ export class OrdersService {
 
     order.promoCode = promoCode.code;
     await order.save();
+
+    const user = await this.userModel.findById(order.userId).populate('userIdentity').lean();
+    this.eventBus.publish(
+      new PromoCodeAppliedEvent({
+        usedAt: usage.createdAt ?? new Date(),
+        promoCodeId: promoCode.id ?? promoCode._id?.toString?.(),
+        code: promoCode.code,
+        userId: order.userId?.toString?.() ?? '',
+        orderId: order.id ?? order._id?.toString?.(),
+        email: (user as any)?.userIdentity?.email ?? '',
+        name: user?.name ?? '',
+        phone: user?.phone ?? '',
+        orderAmount: order.amount ?? 0,
+        discountAmount,
+      }),
+    );
 
     return usage;
   }
