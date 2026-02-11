@@ -1,0 +1,1009 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api": {
+      "get": {
+        "operationId": "ApiController_healthCheck",
+        "parameters": [],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Api"]
+      }
+    },
+    "/api/logs": {
+      "get": {
+        "operationId": "LoggerController_getLogs",
+        "parameters": [
+          { "name": "date", "required": false, "in": "query", "schema": { "example": "2025-06-22", "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Logs data" },
+          "404": {
+            "description": "Logs for passed date not found",
+            "content": { "application/json": { "example": "Log file for ${targetDate} not found" } }
+          }
+        },
+        "summary": "Return logs by data",
+        "tags": ["Logs"]
+      }
+    },
+    "/api/users/signup": {
+      "post": {
+        "operationId": "UsersController_signup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateUserDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Empty response" },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          }
+        },
+        "summary": "Create User",
+        "tags": ["Users"]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "operationId": "UsersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All users",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UserViewAllDTO" } } }
+            }
+          }
+        },
+        "summary": "Show all users",
+        "tags": ["Users"]
+      },
+      "patch": {
+        "operationId": "UsersController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateUserDto" } } }
+        },
+        "responses": {
+          "200": { "description": "Empty response" },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "401": {
+            "description": "UnauthorizedException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnauthorizedException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update User",
+        "tags": ["Users"]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "UsersController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User info for self",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserSelfView" } } }
+          },
+          "401": {
+            "description": "UnauthorizedException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnauthorizedException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Show User info for self",
+        "tags": ["Users"]
+      }
+    },
+    "/api/users/ban": {
+      "patch": {
+        "operationId": "UsersController_ban",
+        "parameters": [
+          {
+            "name": "email",
+            "required": true,
+            "in": "query",
+            "description": "The unique email address",
+            "schema": { "example": "example@email.com", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Empty response" },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "401": {
+            "description": "UnauthorizedException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnauthorizedException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          },
+          "404": {
+            "description": "NotFoundException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Ban User",
+        "tags": ["Users"]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "login data",
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateUserIdentityModel" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "refresh_token",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RefreshToken" } } }
+          },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "401": {
+            "description": "UnauthorizedException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnauthorizedException" } } }
+          }
+        },
+        "summary": "Login User and return refresh_token",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RefreshToken" } } }
+        },
+        "responses": {
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "401": {
+            "description": "UnauthorizedException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnauthorizedException" } } }
+          }
+        },
+        "summary": "Refresh and return refresh_token",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth": {
+      "patch": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Empty response" },
+          "401": {
+            "description": "UnauthorizedException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UnauthorizedException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Logout User clear cookies delete refreshToken",
+        "tags": ["Auth"]
+      }
+    },
+    "/api/promo-codes": {
+      "post": {
+        "operationId": "PromoCodesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePromoCodeDto" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Promo code created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PromoCodeViewDto" } } }
+          },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Create promo code",
+        "tags": ["Promo codes"]
+      },
+      "get": {
+        "operationId": "PromoCodesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All promo codes",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PromoCodeViewDto" } }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Show all promo codes",
+        "tags": ["Promo codes"]
+      }
+    },
+    "/api/promo-codes/{id}": {
+      "get": {
+        "operationId": "PromoCodesController_findOne",
+        "parameters": [{ "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Promo code",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PromoCodeViewDto" } } }
+          },
+          "404": {
+            "description": "NotFoundException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Show promo code by id",
+        "tags": ["Promo codes"]
+      },
+      "patch": {
+        "operationId": "PromoCodesController_update",
+        "parameters": [{ "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdatePromoCodeDto" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Promo code updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PromoCodeViewDto" } } }
+          },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          },
+          "404": {
+            "description": "NotFoundException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Update promo code",
+        "tags": ["Promo codes"]
+      }
+    },
+    "/api/promo-codes/disable/{id}": {
+      "patch": {
+        "operationId": "PromoCodesController_disable",
+        "parameters": [{ "name": "id", "required": true, "in": "path", "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Promo code deactivated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PromoCodeViewDto" } } }
+          },
+          "404": {
+            "description": "NotFoundException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Deactivate promo code",
+        "tags": ["Promo codes"]
+      }
+    },
+    "/api/orders/my": {
+      "get": {
+        "operationId": "OrdersController_findMyOrders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Orders list",
+            "content": {
+              "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/OrderViewDto" } } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Show my orders",
+        "tags": ["Orders"]
+      }
+    },
+    "/api/orders/apply-promo-code": {
+      "post": {
+        "operationId": "OrdersController_applyPromoCode",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "query",
+            "description": "Order id",
+            "schema": { "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "type": "string" }
+          },
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "description": "Promo code",
+            "schema": { "example": "SUMMER2026", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promo code applied",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PromoCodeUsageViewDto" } } }
+          },
+          "400": {
+            "description": "BadRequestException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BadRequestException" } } }
+          },
+          "403": {
+            "description": "ForbiddenException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForbiddenException" } } }
+          },
+          "404": {
+            "description": "NotFoundException object",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotFoundException" } } }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Apply promo code to order",
+        "tags": ["Orders"]
+      }
+    },
+    "/api/analytics/users": {
+      "get": {
+        "operationId": "AnalyticsController_getUsersAggregatedStats",
+        "parameters": [
+          {
+            "name": "datePreset",
+            "required": false,
+            "in": "query",
+            "description": "Date preset for stats range",
+            "schema": { "type": "string", "enum": ["today", "last7Days", "last30Days", "custom"] }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start date",
+            "schema": { "format": "date", "example": "2026-02-10", "type": "string" }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End date",
+            "schema": { "format": "date", "example": "2026-02-10", "type": "string" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limit",
+            "schema": { "example": 50, "type": "number" }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Offset",
+            "schema": { "example": 0, "type": "number" }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": { "example": "orders_count", "type": "string" }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction",
+            "schema": { "type": "string", "enum": ["asc", "desc"] }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "User id",
+            "schema": { "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "type": "string" }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "description": "Email",
+            "schema": { "example": "user@email.com", "type": "string" }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Name",
+            "schema": { "example": "John", "type": "string" }
+          },
+          {
+            "name": "phone",
+            "required": false,
+            "in": "query",
+            "description": "Phone",
+            "schema": { "example": "+12025550123", "type": "string" }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in email/name/phone",
+            "schema": { "example": "john", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregated stats",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AnalyticsUsersAggregatedStatsViewDto" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get users aggregated statistics",
+        "tags": ["Analytics"]
+      }
+    },
+    "/api/analytics/promo-codes": {
+      "get": {
+        "operationId": "AnalyticsController_getPromoCodesAggregatedStats",
+        "parameters": [
+          {
+            "name": "datePreset",
+            "required": false,
+            "in": "query",
+            "description": "Date preset for stats range",
+            "schema": { "type": "string", "enum": ["today", "last7Days", "last30Days", "custom"] }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start date",
+            "schema": { "format": "date", "example": "2026-02-10", "type": "string" }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End date",
+            "schema": { "format": "date", "example": "2026-02-10", "type": "string" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limit",
+            "schema": { "example": 50, "type": "number" }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Offset",
+            "schema": { "example": 0, "type": "number" }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": { "example": "orders_count", "type": "string" }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction",
+            "schema": { "type": "string", "enum": ["asc", "desc"] }
+          },
+          {
+            "name": "promoCodeId",
+            "required": false,
+            "in": "query",
+            "description": "Promo code id",
+            "schema": { "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "type": "string" }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "description": "Promo code",
+            "schema": { "example": "SUMMER2026", "type": "string" }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in code",
+            "schema": { "example": "summer", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregated stats",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AnalyticsPromoCodesAggregatedStatsViewDto" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get promo codes aggregated statistics",
+        "tags": ["Analytics"]
+      }
+    },
+    "/api/analytics/promo-code-usage": {
+      "get": {
+        "operationId": "AnalyticsController_getPromoCodeUsageHistory",
+        "parameters": [
+          {
+            "name": "datePreset",
+            "required": false,
+            "in": "query",
+            "description": "Date preset for stats range",
+            "schema": { "type": "string", "enum": ["today", "last7Days", "last30Days", "custom"] }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start date",
+            "schema": { "format": "date", "example": "2026-02-10", "type": "string" }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End date",
+            "schema": { "format": "date", "example": "2026-02-10", "type": "string" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limit",
+            "schema": { "example": 50, "type": "number" }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Offset",
+            "schema": { "example": 0, "type": "number" }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": { "example": "orders_count", "type": "string" }
+          },
+          {
+            "name": "sortDir",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction",
+            "schema": { "type": "string", "enum": ["asc", "desc"] }
+          },
+          {
+            "name": "promoCodeId",
+            "required": false,
+            "in": "query",
+            "description": "Promo code id",
+            "schema": { "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "type": "string" }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "description": "Promo code",
+            "schema": { "example": "SUMMER2026", "type": "string" }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "User id",
+            "schema": { "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "type": "string" }
+          },
+          {
+            "name": "orderId",
+            "required": false,
+            "in": "query",
+            "description": "Order id",
+            "schema": { "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "type": "string" }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "description": "Email",
+            "schema": { "example": "user@email.com", "type": "string" }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Name",
+            "schema": { "example": "John", "type": "string" }
+          },
+          {
+            "name": "phone",
+            "required": false,
+            "in": "query",
+            "description": "Phone",
+            "schema": { "example": "+12025550123", "type": "string" }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in code/email/name/phone",
+            "schema": { "example": "john", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage history",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AnalyticsPromoCodeUsageHistoryViewDto" } }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "summary": "Get promo code usage history",
+        "tags": ["Analytics"]
+      }
+    }
+  },
+  "info": { "title": "REST API Chat", "description": "The REST API Chat API description", "version": "1.0", "contact": {} },
+  "tags": [{ "name": "RCh", "description": "" }],
+  "servers": [],
+  "components": {
+    "securitySchemes": { "bearer": { "scheme": "bearer", "bearerFormat": "JWT", "type": "http" } },
+    "schemas": {
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Steven", "description": "The name of user" },
+          "email": { "type": "string", "example": "example@email.com", "description": "The unique email address" },
+          "password": { "type": "string", "example": "my-strong-password", "description": "The password of user" }
+        },
+        "required": ["name", "email", "password"]
+      },
+      "BadRequestException": { "type": "object", "properties": {} },
+      "ForbiddenException": { "type": "object", "properties": {} },
+      "UserIdentityViewDTO": { "type": "object", "properties": {} },
+      "UserViewAllDTO": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "The unique user id" },
+          "name": { "type": "string", "example": "Destroer 8000", "description": "User name" },
+          "userIdentity": { "description": "User identity", "allOf": [{ "$ref": "#/components/schemas/UserIdentityViewDTO" }] }
+        },
+        "required": ["id", "name", "userIdentity"]
+      },
+      "UserSelfView": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "The unique user id" },
+          "name": { "type": "string", "example": "Destroer 8000", "description": "User name" },
+          "email": { "type": "string", "example": "example@email.com", "description": "User email" }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "UnauthorizedException": { "type": "object", "properties": {} },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": { "name": { "type": "string", "example": "Steven", "description": "The name of user" } },
+        "required": ["name"]
+      },
+      "NotFoundException": { "type": "object", "properties": {} },
+      "CreateUserIdentityModel": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "description": "user email", "example": "example@email.com" },
+          "password": { "type": "string", "description": "user password", "example": "my-strong-password" }
+        },
+        "required": ["email", "password"]
+      },
+      "RefreshToken": {
+        "type": "object",
+        "properties": {
+          "refresh_token": { "type": "string", "description": "refresh_token", "example": "asdfgsdlfkg34kldnflgsdlfg" }
+        },
+        "required": ["refresh_token"]
+      },
+      "PromoCodeLimitDto": {
+        "type": "object",
+        "properties": {
+          "overall": { "type": "number", "example": 1000, "description": "Overall usage limit" },
+          "perUser": { "type": "number", "example": 1, "description": "Usage limit per user" }
+        },
+        "required": ["overall", "perUser"]
+      },
+      "PromoCodeValidityPeriodDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-02-08T00:00:00.000Z",
+            "description": "Start date of validity period"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-03-08T00:00:00.000Z",
+            "description": "End date of validity period"
+          }
+        }
+      },
+      "CreatePromoCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "SUMMER2026", "description": "Unique promo code" },
+          "discount": { "type": "number", "example": 15, "description": "Discount percentage" },
+          "limit": { "description": "Usage limits", "allOf": [{ "$ref": "#/components/schemas/PromoCodeLimitDto" }] },
+          "validityPeriod": {
+            "description": "Validity period",
+            "allOf": [{ "$ref": "#/components/schemas/PromoCodeValidityPeriodDto" }]
+          },
+          "active": { "type": "boolean", "example": true, "description": "Active status" }
+        },
+        "required": ["code", "discount", "limit"]
+      },
+      "PromoCodeViewDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "Promo code id" },
+          "code": { "type": "string", "example": "SUMMER2026", "description": "Unique promo code" },
+          "discount": { "type": "number", "example": 15, "description": "Discount percentage" },
+          "limit": { "description": "Usage limits", "allOf": [{ "$ref": "#/components/schemas/PromoCodeLimitDto" }] },
+          "validityPeriod": {
+            "description": "Validity period",
+            "allOf": [{ "$ref": "#/components/schemas/PromoCodeValidityPeriodDto" }]
+          },
+          "active": { "type": "boolean", "example": true, "description": "Active status" }
+        },
+        "required": ["id", "code", "discount", "limit", "active"]
+      },
+      "UpdatePromoCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "SUMMER2026", "description": "Unique promo code" },
+          "discount": { "type": "number", "example": 15, "description": "Discount percentage" },
+          "limit": { "description": "Usage limits", "allOf": [{ "$ref": "#/components/schemas/PromoCodeLimitDto" }] },
+          "validityPeriod": {
+            "description": "Validity period",
+            "allOf": [{ "$ref": "#/components/schemas/PromoCodeValidityPeriodDto" }]
+          }
+        }
+      },
+      "OrderViewDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "Order id" },
+          "userId": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "User id" },
+          "amount": { "type": "number", "example": 199.99, "description": "Order amount" },
+          "promoCode": { "type": "string", "example": "SUMMER2026", "description": "Applied promo code" },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-02-08T10:00:00.000Z",
+            "description": "Created at"
+          }
+        },
+        "required": ["id", "userId", "amount", "createdAt"]
+      },
+      "PromoCodeUsageViewDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "Usage id" },
+          "promoCodeId": {
+            "type": "string",
+            "example": "c47f3448-0a96-487f-b602-0a4529825fa2",
+            "description": "Promo code id"
+          },
+          "userId": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "User id" },
+          "orderId": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "Order id" },
+          "discountAmount": { "type": "number", "example": 125.5, "description": "Calculated discount amount" },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-02-08T10:00:00.000Z",
+            "description": "Usage date"
+          }
+        },
+        "required": ["id", "promoCodeId", "userId", "orderId", "discountAmount", "createdAt"]
+      },
+      "AnalyticsUserAggregatedStatsViewDto": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "User id" },
+          "email": { "type": "string", "example": "user@email.com", "description": "Email" },
+          "name": { "type": "string", "example": "John", "description": "Name" },
+          "phone": { "type": "string", "example": "+12025550123", "description": "Phone" },
+          "orders_count": { "type": "number", "example": 5, "description": "Orders count" },
+          "orders_amount_sum": { "type": "string", "example": "199.99", "description": "Orders amount sum" },
+          "orders_amount_min": { "type": "string", "example": "10.00", "description": "Orders amount min" },
+          "orders_amount_max": { "type": "string", "example": "500.00", "description": "Orders amount max" },
+          "orders_amount_avg": { "type": "string", "example": "120.50", "description": "Orders amount avg" },
+          "promo_codes_used": { "type": "number", "example": 2, "description": "Promo codes used" },
+          "promo_codes_unique": { "type": "number", "example": 2, "description": "Unique promo codes used" },
+          "discount_sum": { "type": "string", "example": "15.00", "description": "Discount sum" },
+          "discount_min": { "type": "string", "example": "5.00", "description": "Discount min" },
+          "discount_max": { "type": "string", "example": "20.00", "description": "Discount max" },
+          "discount_avg": { "type": "string", "example": "10.00", "description": "Discount avg" }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "name",
+          "phone",
+          "orders_count",
+          "orders_amount_sum",
+          "orders_amount_min",
+          "orders_amount_max",
+          "orders_amount_avg",
+          "promo_codes_used",
+          "promo_codes_unique",
+          "discount_sum",
+          "discount_min",
+          "discount_max",
+          "discount_avg"
+        ]
+      },
+      "AnalyticsUsersAggregatedStatsViewDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Items",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AnalyticsUserAggregatedStatsViewDto" }
+          },
+          "total": { "type": "number", "example": 120, "description": "Total items count" }
+        },
+        "required": ["items", "total"]
+      },
+      "AnalyticsPromoCodeAggregatedStatsViewDto": {
+        "type": "object",
+        "properties": {
+          "promo_code_id": {
+            "type": "string",
+            "example": "c47f3448-0a96-487f-b602-0a4529825fa2",
+            "description": "Promo code id"
+          },
+          "code": { "type": "string", "example": "SUMMER2026", "description": "Promo code" },
+          "uses_count": { "type": "number", "example": 12, "description": "Uses count" },
+          "unique_users": { "type": "number", "example": 8, "description": "Unique users" },
+          "revenue_sum": { "type": "string", "example": "999.99", "description": "Revenue sum" },
+          "order_amount_min": { "type": "string", "example": "50.00", "description": "Order amount min" },
+          "order_amount_max": { "type": "string", "example": "300.00", "description": "Order amount max" },
+          "order_amount_avg": { "type": "string", "example": "120.00", "description": "Order amount avg" },
+          "discount_sum": { "type": "string", "example": "25.00", "description": "Discount sum" },
+          "discount_min": { "type": "string", "example": "5.00", "description": "Discount min" },
+          "discount_max": { "type": "string", "example": "40.00", "description": "Discount max" },
+          "discount_avg": { "type": "string", "example": "15.00", "description": "Discount avg" }
+        },
+        "required": [
+          "promo_code_id",
+          "code",
+          "uses_count",
+          "unique_users",
+          "revenue_sum",
+          "order_amount_min",
+          "order_amount_max",
+          "order_amount_avg",
+          "discount_sum",
+          "discount_min",
+          "discount_max",
+          "discount_avg"
+        ]
+      },
+      "AnalyticsPromoCodesAggregatedStatsViewDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Items",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AnalyticsPromoCodeAggregatedStatsViewDto" }
+          },
+          "total": { "type": "number", "example": 120, "description": "Total items count" }
+        },
+        "required": ["items", "total"]
+      },
+      "AnalyticsPromoCodeUsageHistoryItemViewDto": {
+        "type": "object",
+        "properties": {
+          "used_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-02-08T10:00:00.000Z",
+            "description": "Used at"
+          },
+          "promo_code_id": {
+            "type": "string",
+            "example": "c47f3448-0a96-487f-b602-0a4529825fa2",
+            "description": "Promo code id"
+          },
+          "code": { "type": "string", "example": "SUMMER2026", "description": "Promo code" },
+          "user_id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "User id" },
+          "order_id": { "type": "string", "example": "c47f3448-0a96-487f-b602-0a4529825fa2", "description": "Order id" },
+          "email": { "type": "string", "example": "user@email.com", "description": "Email" },
+          "name": { "type": "string", "example": "John", "description": "Name" },
+          "phone": { "type": "string", "example": "+12025550123", "description": "Phone" },
+          "order_amount": { "type": "string", "example": "199.99", "description": "Order amount" },
+          "discount_amount": { "type": "string", "example": "10.00", "description": "Discount amount" }
+        },
+        "required": [
+          "used_at",
+          "promo_code_id",
+          "code",
+          "user_id",
+          "order_id",
+          "email",
+          "name",
+          "phone",
+          "order_amount",
+          "discount_amount"
+        ]
+      },
+      "AnalyticsPromoCodeUsageHistoryViewDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Items",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AnalyticsPromoCodeUsageHistoryItemViewDto" }
+          },
+          "total": { "type": "number", "example": 120, "description": "Total items count" }
+        },
+        "required": ["items", "total"]
+      }
+    }
+  }
+}
