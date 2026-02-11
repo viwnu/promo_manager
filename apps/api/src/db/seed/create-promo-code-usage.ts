@@ -9,9 +9,9 @@ export async function createPromoCodeUsage(
   discountAmount: number,
 ) {
   return await new promoCodeUsageModel({
-    promoCode: promoCodeId,
-    user: userId,
-    order: orderId,
+    promoCodeId,
+    userId,
+    orderId,
     discountAmount,
   }).save();
 }
