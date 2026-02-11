@@ -1,0 +1,65 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: promo-manager-mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    environment:
+      MONGO_INITDB_DATABASE: promo_manager
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval \"try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok }\" | grep 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: promo-manager-clickhouse
+    environment:
+      CLICKHOUSE_DB: promo_manager
+      CLICKHOUSE_USER: app
+      CLICKHOUSE_PASSWORD: StrongPassword123!
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping | grep -q 'Ok.'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: promo-manager-app
+    env_file:
+      - .env.api.production
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongo:27017/promo_manager?replicaSet=rs0
+      CH_HOST: clickhouse
+      CH_DB: promo_manager
+      CH_USERNAME: app
+      CH_PWD: StrongPassword123!
+    depends_on:
+      mongo:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  clickhouse_data:
