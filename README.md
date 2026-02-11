@@ -1,6 +1,8 @@
 ﻿# PromoCode Manager
 
 Попробовать запущенное приложение: [Promo Code Manager](http://5.129.242.251:3000/)
+login: admin@email.com
+password: my-strong-password (у всех пользователей)
 
 Fullstack приложение для управления промокодами и аналитикой.
 
