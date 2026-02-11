@@ -1,73 +1,111 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+﻿# PromoCode Manager
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Fullstack приложение для управления промокодами и аналитикой.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Стек:
+- Backend: NestJS, TypeScript, Mongoose, CQRS, ClickHouse
+- Frontend: React + Vite + TypeScript + MUI + material-react-table
+- Базы данных: MongoDB (source of truth), ClickHouse (аналитика)
+- Инфраструктура: Docker Compose
 
-## Description
+## Что реализовано
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Авторизация, аутентификация и RBAC: `libs/shared/auth`.
+- Swagger-документация через `libs/shared/api-doc` доступна по `http://host:port/api/docs`.
+- Логирование: `libs/shared/logger`.
+- Сериализация данных: `libs/shared/serializer`.
+- Feature-модули API: `apps/api/src/features`.
+- CRUD/API для пользователей и промокодов, применение промокодов в модуле заказов, API аналитики.
+- Сиды основной БД: `apps/api/src/db/seed`.
+- Связь доменной логики и аналитики через CQRS events: `apps/api/src/events`.
+- Автоинициализация таблиц ClickHouse: скрипт `ch:init`.
+- Автозаполнение аналитики при старте: `apps/api/src/features/analytics/backfill.service.ts`.
+- Автогенерация типов для web через `swagger-typescript-api` из `apps/web/swagger.json`.
+- В production UI раздается как статический контент из `apps/web/dist` (Nest `ServeStaticModule`).
+- В development UI запускается отдельно: `dev:web`, либо вместе с API: `dev` (Unix) / `dev:cmd` (Windows).
+- Race conditions при применении промокодов решены транзакциями MongoDB (нужен replica set).
+- Расчет скидок сделан через `decimal.js` для корректной работы с дробными числами.
+- Реализован оптимистичный UI; во фронте вынесены хуки, утилиты, работа с сетью, состояние и отображение.
 
-## Installation
+## Архитектурное решение (MongoDB + ClickHouse)
+
+- MongoDB: CRUD и транзакционная доменная логика.
+- ClickHouse: аналитические таблицы и быстрые агрегаты для отчетов.
+- Синхронизация: события CQRS + backfill для восстановления/дозаполнения аналитики.
+
+План развития:
+- Разделение на микросервисы с брокером сообщений/очередями.
+- Популярные варианты: Kafka, RabbitMQ, BullMQ.
+- Практичный старт: RabbitMQ для интеграционных событий между сервисами; BullMQ для фоновых задач/ретраев внутри Node.js контуров.
+- Kafka имеет смысл при высоком потоке событий и необходимости длительного event log.
+
+## Переменные окружения
+
+- Локально: `.env.api.development`
+- Прод: `.env.api.production`
+- Пример для docker-сети: `.env.api.example.docker`
+
+Для web-приложения значения также читаются из `.env.api.*` через `apps/web/vite.config.ts`:
+- `VITE_API_BASE_URL` — базовый URL фронта/клиента
+- `API_BASE_URL` — backend host для Vite proxy
+
+## Запуск в development
+
+Установка зависимостей:
 
 ```bash
-$ yarn install
+yarn install
+yarn --cwd apps/web install
 ```
 
-## Running the app
+Запуск:
 
 ```bash
-# development
-$ yarn run start
+# API
+yarn dev:api
 
-# watch mode
-$ yarn run start:dev
+# Web
+yarn dev:web
 
-# production mode
-$ yarn run start:prod
+# API + Web (Unix)
+yarn dev
+
+# API + Web (Windows)
+yarn dev:cmd
 ```
 
-## Test
+## Сборка
 
 ```bash
-# unit tests
-$ yarn run test
+# Web
+yarn build:web
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+# API
+yarn build:api
 ```
 
-## Support
+## Запуск в production (Docker)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+docker compose up -d --build
+```
 
-## Stay in touch
+Поднимутся сервисы:
+- `app` (Nest + статический web) на `http://localhost:3000`
+- `mongo` (replica set `rs0`, внутренний сервис)
+- `clickhouse` (внутренний сервис)
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+При старте `app` выполняется:
+1. seed MongoDB
+2. `ch:init` для ClickHouse
+3. запуск API в production
 
-## License
+## Полезные команды
 
-Nest is [MIT licensed](LICENSE).
+```bash
+# Инициализация таблиц аналитики
+yarn ch:init
+
+# Генерация web API типов из swagger
+yarn --cwd apps/web generate:api:types
+```
