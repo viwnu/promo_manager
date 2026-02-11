@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build:api": "nest build api",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "dev:api": "cross-env NODE_ENV=development nest start api -w",
     "debug:api": "cross-env NODE_ENV=development nest start api --debug --watch",

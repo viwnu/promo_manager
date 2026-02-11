@@ -22,8 +22,8 @@ import { AnalyticsModule } from './features/analytics/analytics.module';
     ...(process.env.NODE_ENV === 'production'
       ? [
           ServeStaticModule.forRoot({
-            rootPath: join(process.cwd(), 'static'),
-            // serveRoot: '/static',
+            rootPath: join(process.cwd(), 'apps/web/dist'),
+            exclude: ['/api*'],
           }),
         ]
       : []),
