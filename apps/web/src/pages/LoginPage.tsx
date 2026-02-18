@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { CreateUserIdentityModel } from "../api/source/Api";
 import { normalizeErrorMessage } from "../api/httpError";
 import { login } from "../features/auth/api";
-import { useAuth } from "../features/auth/useAuth";
+import { useAuthStore } from "../features/auth/store";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -18,7 +18,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function LoginPage() {
   const { enqueueSnackbar } = useSnackbar();
-  const { refreshUser } = useAuth();
+  const refreshUser = useAuthStore((state) => state.refreshUser);
   const navigate = useNavigate();
   const {
     register: registerField,

@@ -11,7 +11,7 @@
   Typography,
 } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../features/auth/useAuth";
+import { useAuthStore } from "../../features/auth/store";
 
 const drawerWidth = 240;
 
@@ -25,7 +25,7 @@ const navItems = [
 ];
 
 export function AppLayout() {
-  const { logout } = useAuth();
+  const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
   const location = useLocation();
 

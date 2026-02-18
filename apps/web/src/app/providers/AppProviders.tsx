@@ -2,7 +2,7 @@
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SnackbarProvider } from "notistack";
-import { AuthProvider } from "../../features/auth/AuthProvider";
+import { AuthBootstrap } from "../../features/auth/AuthBootstrap";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +40,8 @@ export function AppProviders({ children }: PropsWithChildren) {
       <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <AuthProvider>{children}</AuthProvider>
+          <AuthBootstrap />
+          {children}
         </ThemeProvider>
       </SnackbarProvider>
     </QueryClientProvider>

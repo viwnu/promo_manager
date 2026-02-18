@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import type { CreateUserDto, CreateUserIdentityModel } from "../api/source/Api";
 import { normalizeErrorMessage } from "../api/httpError";
 import { login, register } from "../features/auth/api";
-import { useAuth } from "../features/auth/useAuth";
+import { useAuthStore } from "../features/auth/store";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -20,7 +20,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function RegisterPage() {
   const { enqueueSnackbar } = useSnackbar();
-  const { refreshUser } = useAuth();
+  const refreshUser = useAuthStore((state) => state.refreshUser);
   const navigate = useNavigate();
   const {
     register: registerField,

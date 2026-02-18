@@ -2,19 +2,20 @@
 import { Box, CircularProgress } from "@mui/material";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { onUnauthorized } from "../../api/apiClient";
-import { useAuth } from "../../features/auth/useAuth";
+import { useAuthStore } from "../../features/auth/store";
 
 export function ProtectedRoute() {
-  const { isAuthenticated, isLoading, setUnauthenticated } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const navigate = useNavigate();
 
   useEffect(() => {
     onUnauthorized(() => {
-      setUnauthenticated();
+      useAuthStore.getState().setUnauthenticated();
       navigate("/login");
     });
     return () => onUnauthorized(null);
-  }, [navigate, setUnauthenticated]);
+  }, [navigate]);
 
   if (isLoading) {
     return (

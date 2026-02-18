@@ -6,7 +6,7 @@ import type { MRT_ColumnDef } from "material-react-table";
 import { MaterialReactTable } from "material-react-table";
 import type { UserViewAllDTO } from "../api/source/Api";
 import { normalizeErrorMessage } from "../api/httpError";
-import { useAuth } from "../features/auth/useAuth";
+import { useAuthStore } from "../features/auth/store";
 import { listUsers, updateUser, banUserByEmail } from "../features/users/api";
 import { UserFormDialog } from "../features/users/UserFormDialog";
 import { ConfirmDialog } from "../shared/ui/ConfirmDialog";
@@ -15,7 +15,7 @@ import { TableScrollWrapper } from "../shared/ui/TableScrollWrapper";
 
 export function UsersPage() {
   const { enqueueSnackbar } = useSnackbar();
-  const { user: currentUser } = useAuth();
+  const currentUser = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
   const [editOpen, setEditOpen] = useState(false);

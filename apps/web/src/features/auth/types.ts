@@ -1,13 +1,17 @@
-﻿import { createContext } from "react";
 import type { UserSelfView } from "../../api/source/Api";
 
-export type AuthContextValue = {
+export type AuthState = {
   user: UserSelfView | null;
   isLoading: boolean;
-  isAuthenticated: boolean;
+};
+
+export type AuthActions = {
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
   setUnauthenticated: () => void;
 };
 
-export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+export type AuthStoreState = AuthState &
+  AuthActions & {
+    isAuthenticated: boolean;
+  };
